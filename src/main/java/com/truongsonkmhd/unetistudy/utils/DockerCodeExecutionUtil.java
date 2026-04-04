@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 
 @Component
 public class DockerCodeExecutionUtil {
-    private static final int EXECUTION_TIMEOUT_SECONDS = 10;
+    private static final int EXECUTION_TIMEOUT_SECONDS = 30;
     private static final int MEMORY_LIMIT_MB = 256;
 
     private final LanguageRunnerFactory runnerFactory;

@@ -2,6 +2,7 @@ package com.truongsonkmhd.unetistudy.configuration;
 
 import com.rabbitmq.client.Channel;
 import com.truongsonkmhd.unetistudy.dto.coding_exercise_dto.JudgeRequestDTO;
+import com.truongsonkmhd.unetistudy.dto.coding_exercise_dto.JudgeRunResponseDTO;
 import com.truongsonkmhd.unetistudy.dto.judge_rabbit_mq.JudgeRunMessage;
 import com.truongsonkmhd.unetistudy.service.JudgeService;
 import com.truongsonkmhd.unetistudy.service.WebSocketNotificationService;
@@ -54,9 +55,19 @@ public class JudgeRunConsumer {
 
         } catch (Exception e) {
             log.error("Run job failed: runId={}", payload.getRunId(), e);
+            
+            // Gửi thông báo trạng thái lỗi
             webSocketService.notifyRunStatus(payload.getUserId(), payload.getRunId(), "ERROR");
-            // ACK để tránh loop vô hạn trong Run (chạy thử không cần retry phức tạp như
-            // Submit)
+            
+            // QUAN TRỌNG: Gửi thêm một object kết quả giả với verdict là ERROR 
+            // để Frontend nhận diện được và tắt spinner (vì Frontend lắng nghe runResult để tắt spinner)
+            JudgeRunResponseDTO errorResult = JudgeRunResponseDTO.builder()
+                    .verdict("RUNTIME_ERROR")
+                    .status("ERROR")
+                    .message("Lỗi hệ thống khi thực thi: " + e.getMessage())
+                    .build();
+            webSocketService.notifyRunResult(payload.getUserId(), errorResult);
+
             channel.basicAck(tag, false);
         }
     }

@@ -26,4 +26,9 @@ public class EnrollmentResponse {
     private String requestMessage;
     private String rejectionReason;
     private String slug;
+    private String imageUrl;
+    private String instructorName;
+    private Integer totalModules;
+    private Integer enrolledCount;
+    private Integer capacity;
 }

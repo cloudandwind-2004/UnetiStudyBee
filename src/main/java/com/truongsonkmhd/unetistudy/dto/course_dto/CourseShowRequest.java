@@ -33,9 +33,7 @@ public class CourseShowRequest {
     MultipartFile imageFile; // File ảnh thumbnail (vẫn giữ upload Supabase)
     String videoUrl; // YouTube URL giới thiệu khóa học (thay thế videoFile)
     CourseStatus status;
-    String requirements; // Yêu cầu đầu vào
-    String objectives; // Mục tiêu học tập
-    String syllabus; // Đề cương
+
     
     @Builder.Default
     List<String> learningOutcomes = new ArrayList<>(); // Bạn sẽ học được gì

@@ -145,22 +145,16 @@ public class JudgeSubmitConsumer {
             log.error("Judge failed: submissionId={}, retryCount={}",
                     payload.getSubmissionId(), retryCount, e);
 
-            // Cập nhật verdict lỗi (cẩn thận vì retry còn chạy)
-            try {
-                CodingSubmission sub = codingSubmissionService.getSubmissionById(payload.getSubmissionId());
-                if (!isFinalVerdict(sub.getVerdict())) {
-                    sub.setVerdict(SubmissionVerdict.RUNTIME_ERROR);
-                    codingSubmissionService.save(sub);
-                }
-            } catch (Exception ignored) {
-                log.warn("Failed to update error verdict for submissionId={}",
-                        payload.getSubmissionId());
-            }
-
             if (retryCount >= MAX_RETRY) {
                 // Quá số lần retry -> đẩy DLQ
                 log.error("Max retry exceeded: submissionId={}, moving to DLQ",
                         payload.getSubmissionId());
+
+                // Thông báo lỗi lần cuối cho người dùng trước khi bỏ cuộc
+                webSocketService.notifySubmissionStatus(
+                        payload.getUserId(),
+                        payload.getSubmissionId(),
+                        "RUNTIME_ERROR");
 
                 rabbitTemplate.convertAndSend(
                         JudgeRabbitConfig.JUDGE_EXCHANGE,
