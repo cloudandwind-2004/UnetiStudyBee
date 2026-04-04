@@ -247,6 +247,11 @@ public class CourseEnrollmentServiceImpl implements CourseEnrollmentService {
                 .requestMessage(entity.getRequestMessage())
                 .rejectionReason(entity.getRejectionReason())
                 .slug(entity.getCourse().getSlug())
+                .imageUrl(entity.getCourse().getImageUrl())
+                .instructorName(entity.getCourse().getInstructor() != null ? entity.getCourse().getInstructor().getFullName() : null)
+                .totalModules(entity.getCourse().getModules() != null ? entity.getCourse().getModules().size() : 0)
+                .enrolledCount(entity.getCourse().getEnrolledCount() != null ? entity.getCourse().getEnrolledCount() : 0)
+                .capacity(entity.getCourse().getCapacity())
                 .build();
     }
 }

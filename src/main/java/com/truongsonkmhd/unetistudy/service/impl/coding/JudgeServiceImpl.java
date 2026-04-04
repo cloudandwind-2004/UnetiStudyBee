@@ -13,6 +13,7 @@ import com.truongsonkmhd.unetistudy.mapper.lesson.ExerciseTestCaseMapper;
 import com.truongsonkmhd.unetistudy.model.User;
 import com.truongsonkmhd.unetistudy.model.lesson.CodingSubmission;
 import com.truongsonkmhd.unetistudy.model.lesson.ContestExerciseAttempt;
+import com.truongsonkmhd.unetistudy.model.lesson.course_lesson.CodingExercise;
 import com.truongsonkmhd.unetistudy.model.lesson.course_lesson.CourseLesson;
 import com.truongsonkmhd.unetistudy.dto.judge_rabbit_mq.JudgeInternalResult;
 import com.truongsonkmhd.unetistudy.dto.progress_dto.LessonProgressRequest;
@@ -168,8 +169,7 @@ public class JudgeServiceImpl implements JudgeService {
     public JudgeInternalResult judgeCode(JudgeRequestDTO request) {
         Set<ExerciseTestCasesDTO> testCases = getListExerciseTestCase(request.getExerciseId());
 
-        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS"));
-        String folderName = "sub-" + request.getExerciseId() + "-" + timestamp;
+        String folderName = "sub-" + UUID.randomUUID();
 
         Path workingDir = hostBaseDir().resolve(folderName);
 
@@ -227,7 +227,6 @@ public class JudgeServiceImpl implements JudgeService {
                             allPassed = false;
                         } else {
                             passed++;
-                            score += tcScore;
                         }
 
                         testCaseResults
@@ -237,7 +236,7 @@ public class JudgeServiceImpl implements JudgeService {
                                         .actualOutput(actual)
                                         .expectedOutput(expected)
                                         .input(tcInput)
-                                        .points(ok ? tcScore : 0)
+                                        .points(0)
                                         .isKnownTestCase(true)
                                         .testCaseId(tc.getTestCaseId() != null ? tc.getTestCaseId().toString() : null)
                                         .build());
@@ -261,11 +260,16 @@ public class JudgeServiceImpl implements JudgeService {
                         : "Bạn đã vượt qua " + passed + "/" + total
                                 + " test case. Vui lòng kiểm tra lại các trường hợp bị lỗi.";
 
+                // Tính điểm theo tỷ lệ %
+                CodingExercise exercise = codingExerciseService.getExerciseEntityByID(request.getExerciseId());
+                int totalExPoints = (exercise != null) ? (exercise.getPoints() != null ? exercise.getPoints() : 0) : 0;
+                int finalCalculatedScore = total > 0 ? (int) Math.round(((double) passed / total) * totalExPoints) : 0;
+
                 return JudgeInternalResult.builder()
                         .verdict(verdict)
                         .passed(passed)
                         .total(total)
-                        .score(score)
+                        .score(finalCalculatedScore)
                         .message(finalMessage)
                         .testCaseResults(testCaseResults)
                         .build();
@@ -297,8 +301,7 @@ public class JudgeServiceImpl implements JudgeService {
 
     @Override
     public JudgeRunResponseDTO runUserCode(@NonNull JudgeRequestDTO request) {
-        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS"));
-        String folderName = "run-" + request.getExerciseId() + "-" + timestamp;
+        String folderName = "run-" + UUID.randomUUID();
         Path workingDir = hostBaseDir().resolve(folderName);
 
         try {
@@ -381,8 +384,7 @@ public class JudgeServiceImpl implements JudgeService {
 
     @Override
     public JudgeRunResponseDTO runSingleTestCase(JudgeRequestDTO request) {
-        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS"));
-        String folderName = "single-" + request.getExerciseId() + "-" + timestamp;
+        String folderName = "single-" + UUID.randomUUID();
         Path workingDir = hostBaseDir().resolve(folderName);
 
         try {
@@ -446,7 +448,7 @@ public class JudgeServiceImpl implements JudgeService {
                     .input(inputToUse)
                     .isKnownTestCase(isKnownTestCase)
                     .testCaseId(matchedTestCaseId)
-                    .points(isKnownTestCase && tcPoints != null ? tcPoints : 0)
+                    .points(0)
                     .build();
 
         } catch (DockerCodeExecutionUtil.CompilationException e) {
@@ -490,13 +492,16 @@ public class JudgeServiceImpl implements JudgeService {
         int totalTestcases = (dbTestCases == null) ? 0 : dbTestCases.size();
 
         int passed = 0;
-        int score = 0;
         for (JudgeRunResponseDTO res : frontendResults) {
             if ("ACCEPTED".equals(res.getVerdict())) {
                 passed++;
-                score += (res.getPoints() != null ? res.getPoints() : 0);
             }
         }
+
+        // Tính lại điểm theo tỷ lệ % cho submission
+        com.truongsonkmhd.unetistudy.model.lesson.course_lesson.CodingExercise exercise = codingExerciseService.getExerciseEntityByID(request.getExerciseId());
+        int totalExPoints = (exercise != null) ? (exercise.getPoints() != null ? exercise.getPoints() : 0) : 0;
+        int score = totalTestcases > 0 ? (int) Math.round(((double) passed / totalTestcases) * totalExPoints) : 0;
 
         boolean allCasesJudged = frontendResults.size() >= totalTestcases;
         SubmissionVerdict verdict = (allCasesJudged && passed == totalTestcases) ? SubmissionVerdict.ACCEPTED

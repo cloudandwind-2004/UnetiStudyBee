@@ -132,14 +132,17 @@ public class CourseLessonServiceImpl implements CourseLessonService {
         List<QuizTemplate> templates = quizTemplateRepository.findAllById(quizTemplateIds);
 
         templates.forEach(template -> {
+            boolean[] isNew = { false };
             Quiz quiz = quizQuestionRepository.findByTemplateId(template.getId())
                     .orElseGet(() -> {
+                        isNew[0] = true;
                         Quiz newQuiz = template.toQuiz();
                         newQuiz.setTemplateId(template.getId());
                         return quizQuestionRepository.save(newQuiz);
                     });
             courseLesson.addQuizQuestion(quiz);
-            template.incrementUsageCount();
+            // Chỉ tăng usage count khi tạo mới, không tăng khi reuse
+            if (isNew[0]) template.incrementUsageCount();
         });
     }
 
@@ -151,15 +154,18 @@ public class CourseLessonServiceImpl implements CourseLessonService {
                     .findAllById(exerciseTemplateIds);
 
             for (CodingExerciseTemplate template : templates) {
+                boolean[] isNew = { false };
                 CodingExercise exercise = codingExerciseRepository.findByTemplateId(template.getTemplateId())
                         .orElseGet(() -> {
+                            isNew[0] = true;
                             CodingExercise newEx = template.toContestExercise();
                             newEx.setTemplateId(template.getTemplateId());
                             return codingExerciseRepository.save(newEx);
                         });
 
                 courseLesson.addCodingExercise(exercise);
-                template.incrementUsageCount();
+                // Chỉ tăng usage count khi tạo mới, không tăng khi reuse
+                if (isNew[0]) template.incrementUsageCount();
             }
         }
     }
@@ -177,7 +183,26 @@ public class CourseLessonServiceImpl implements CourseLessonService {
         CourseLesson existing = courseLessonRepository.findById(theId)
                 .orElseThrow(() -> new ResourceNotFoundException("CourseLesson not found with id = " + theId));
 
+        // Cập nhật các trường cơ bản (title, description, content, videoUrl, lessonType, ...)
         courseLessonRequestMapper.partialUpdate(existing, request);
+
+        // Đồng bộ danh sách Coding Exercises (replace all)
+        if (request.getExerciseTemplateIds() != null) {
+            existing.getCodingExercises().clear();
+            if (!request.getExerciseTemplateIds().isEmpty()) {
+                addCodingExercisesToLesson(request.getExerciseTemplateIds(), existing);
+            }
+            log.info("Synced {} coding exercises for lesson {}", request.getExerciseTemplateIds().size(), theId);
+        }
+
+        // Đồng bộ danh sách Quizzes (replace all)
+        if (request.getQuizTemplateIds() != null) {
+            existing.getQuizzes().clear();
+            if (!request.getQuizTemplateIds().isEmpty()) {
+                addQuizToContest(request.getQuizTemplateIds(), existing);
+            }
+            log.info("Synced {} quizzes for lesson {}", request.getQuizTemplateIds().size(), theId);
+        }
 
         CourseLesson updated = courseLessonRepository.save(existing);
         return courseLessonResponseMapper.toDto(updated);
