@@ -33,4 +33,4 @@ EXPOSE 8097 5005
 
 # Bật remote debug port 5005
 # suspend=n: app chạy luôn;  đổi y nếu muốn app chờ IDE attach rồi mới chạy
-ENTRYPOINT ["sh", "-c", "java ${JAVA_OPTS} -jar app.jar"]
+ENTRYPOINT ["sh", "-c", "java ${JAVA_OPTS} -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 -jar app.jar"]
