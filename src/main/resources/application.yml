@@ -4,12 +4,19 @@ server:
 spring:
   application:
     name: uneti_study
+  main:
+    lazy-initialization: true
+  jmx:
+    enabled: false
 
   datasource:
     url: ${DB_URL:jdbc:postgresql://postgres:5432/uneti_study}
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 4
+      minimum-idle: 1
 
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.xml
@@ -134,20 +141,20 @@ jhipster:
     allow-credentials: true
     max-age: 1800
 
-management:
-  endpoints:
-    web:
-      exposure:
-        include: "*"
-  endpoint:
+  management:
+    endpoints:
+      web:
+        exposure:
+          include: "*"
+    endpoint:
+      health:
+        probes:
+          enabled: true
     health:
-      probes:
+      livenessState:
         enabled: true
-  health:
-    livenessState:
-      enabled: true
-    readinessState:
-      enabled: true
+      readinessState:
+        enabled: true
   prometheus:
     metrics:
       export:
@@ -165,3 +172,17 @@ logging:
 # ML Service (FastAPI - UnetistudyML)
 ml-service:
   url: ${ML_SERVICE_URL:http://localhost:8000}
+
+# Optimization for low memory
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+management:
+  endpoints:
+    enabled-by-default: false
+  endpoint:
+    health:
+      enabled: true

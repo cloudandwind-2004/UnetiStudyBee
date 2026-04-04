@@ -27,7 +27,6 @@ public abstract class CourseLessonResponseMapper implements EntityMapper<CourseL
     @Mapping(target = "codingExercises", source = "codingExercises")
     @Mapping(target = "quizzes", source = "quizzes")
     @Mapping(target = "totalPoints", ignore = true)
-    @Mapping(target = "duration", ignore = true)
     public abstract CourseLessonResponse toDto(CourseLesson entity);
 
     @Override

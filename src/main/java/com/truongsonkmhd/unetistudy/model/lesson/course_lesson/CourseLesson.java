@@ -87,6 +87,9 @@ public class CourseLesson {
     @Column(name = "lesson_type", nullable = false, length = 30)
     LessonType lessonType;
 
+    @Column(name = "duration")
+    Integer duration;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     Instant createdAt;

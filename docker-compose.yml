@@ -51,6 +51,7 @@ services:
       - "${SERVER_PORT:-8097}:8097"
       - "5005:5005"
     environment:
+      JAVA_OPTS: "-Xmx2048m -Xms1024m"
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-docker}
       DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
       DB_USERNAME: ${POSTGRES_USER}
