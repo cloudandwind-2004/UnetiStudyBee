@@ -35,6 +35,7 @@ public class CourseLessonRequest {
      LessonType lessonType;
 
      Integer totalPoints;
+     Integer duration;
 
      List<UUID> exerciseTemplateIds;
      List<UUID> quizTemplateIds;
