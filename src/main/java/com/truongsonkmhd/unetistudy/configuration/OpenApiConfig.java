@@ -9,12 +9,13 @@ import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
+import org.springframework.context.annotation.Profile;
 import io.swagger.v3.oas.models.servers.Server;
 import org.springframework.beans.factory.annotation.Value;
 import java.util.List;
 
 @Configuration
+@Profile("!prod")
 public class OpenApiConfig {
 
         @Value("${jhipster.clientApp.name:UnetiStudyBee}")

@@ -10,8 +10,6 @@ import com.truongsonkmhd.unetistudy.dto.coding_exercise_dto.CodingExerciseDTO;
 import com.truongsonkmhd.unetistudy.dto.course_dto.*;
 import com.truongsonkmhd.unetistudy.dto.lesson_dto.CourseLessonRequest;
 import com.truongsonkmhd.unetistudy.dto.quiz_dto.QuizDTO;
-import com.truongsonkmhd.unetistudy.model.coding_template.ExerciseTemplateTestCase;
-import com.truongsonkmhd.unetistudy.model.lesson.course_lesson.ExerciseTestCase;
 import com.truongsonkmhd.unetistudy.exception.custom_exception.ResourceConflictException;
 import com.truongsonkmhd.unetistudy.exception.payload.DataNotFoundException;
 import com.truongsonkmhd.unetistudy.mapper.course.CourseModuleRequestMapper;
@@ -36,6 +34,7 @@ import com.truongsonkmhd.unetistudy.repository.course.CourseRepository;
 import com.truongsonkmhd.unetistudy.repository.course.CourseModuleRepository;
 import com.truongsonkmhd.unetistudy.repository.course.LessonRepository;
 import com.truongsonkmhd.unetistudy.repository.course.QuizRepository;
+import com.truongsonkmhd.unetistudy.repository.quiz.QuizTemplateRepository;
 import com.truongsonkmhd.unetistudy.service.CourseTreeService;
 import com.truongsonkmhd.unetistudy.service.infrastructure.SupabaseStorageService;
 import lombok.RequiredArgsConstructor;
@@ -44,7 +43,6 @@ import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -61,7 +59,6 @@ public class CourseTreeServiceImpl implements CourseTreeService {
     private final CourseModuleRepository courseModuleRepository;
     private final CodingExerciseRepository codingExerciseRepository;
     private final CodingSubmissionRepository codingSubmissionRepository;
-    private final EntityManager entityManager;
     private final QuizRepository quizRepository;
     private final CodingExerciseTemplateRepository codingExerciseTemplateRepository;
     private final QuizTemplateRepository quizTemplateRepository;
@@ -131,6 +128,18 @@ public class CourseTreeServiceImpl implements CourseTreeService {
             course.setStatus(CourseStatus.DRAFT);
         if (course.getIsPublished() == null)
             course.setIsPublished(req.getIsPublished() != null ? req.getIsPublished() : false);
+        
+        if (req.getShowStudentCount() != null) {
+            course.setShowStudentCount(req.getShowStudentCount());
+        } else if (course.getShowStudentCount() == null) {
+            course.setShowStudentCount(false);
+        }
+
+        if (req.getShowProgress() != null) {
+            course.setShowProgress(req.getShowProgress());
+        } else if (course.getShowProgress() == null) {
+            course.setShowProgress(false);
+        }
 
         if (Boolean.TRUE.equals(course.getIsPublished())) {
             if (course.getPublishedAt() == null) {
@@ -147,9 +156,6 @@ public class CourseTreeServiceImpl implements CourseTreeService {
         }
 
         Course saved = courseRepository.save(course);
-        // Force flush to ensure custom queries in getCourseTree see the data
-        entityManager.flush(); 
-        
         // Evict toàn bộ related caches một cách tập trung
         courseCacheService.evictCourseCompletely(saved.getCourseId(), saved.getSlug());
         return getCourseTree(saved.getSlug(), userRepository.findRolesByUserId(instructor.getId()));
@@ -181,6 +187,13 @@ public class CourseTreeServiceImpl implements CourseTreeService {
         course.setIsPublished(req.getIsPublished());
         course.setPublishedAt(req.getPublishedAt());
         
+        if (req.getShowStudentCount() != null) {
+            course.setShowStudentCount(req.getShowStudentCount());
+        }
+        if (req.getShowProgress() != null) {
+            course.setShowProgress(req.getShowProgress());
+        }
+
         if (req.getLearningOutcomes() != null) {
             course.getLearningOutcomes().clear();
             course.getLearningOutcomes().addAll(req.getLearningOutcomes());
@@ -222,9 +235,6 @@ public class CourseTreeServiceImpl implements CourseTreeService {
         syncModules(course, req.getModules(), course.getInstructor());
 
         Course saved = courseRepository.save(course);
-        // Force flush to ensure custom queries in getCourseTree see the data
-        entityManager.flush();
-
         // Evict toàn bộ related caches
         courseCacheService.evictCourseCompletely(saved.getCourseId(), saved.getSlug());
         return getCourseTree(saved.getSlug(), userRepository.findRolesByUserId(course.getInstructor().getId()));
@@ -399,7 +409,7 @@ public class CourseTreeServiceImpl implements CourseTreeService {
                 .ratingCount(course.getRatingCount() != null ? course.getRatingCount() : 0)
                 .updatedAt(course.getUpdatedAt() != null ? course.getUpdatedAt()
                         : (course.getPublishedAt() != null ? course.getPublishedAt().toInstant(java.time.ZoneOffset.UTC)
-                           : java.time.Instant.now()))
+                        : java.time.Instant.now()))
                 .build();
     }
 
@@ -511,14 +521,12 @@ public class CourseTreeServiceImpl implements CourseTreeService {
         if (moduleRequests == null)
             moduleRequests = List.of();
 
-        log.info("Syncing modules for course {}: {} modules received", course.getCourseId(), moduleRequests.size());
         // Check for duplicate chapter titles
         Set<String> titles = new HashSet<>();
         for (CourseModuleRequest mr : moduleRequests) {
             String title = mr.getTitle() != null ? mr.getTitle().trim() : "";
             if (!title.isEmpty()) {
                 if (!titles.add(title.toLowerCase())) {
-                    log.error("Duplicate module title found: {}", title);
                     throw new ResourceConflictException("Lỗi trùng tên chương , Vui lòng sửa lại");
                 }
             }
@@ -563,30 +571,13 @@ public class CourseTreeServiceImpl implements CourseTreeService {
     }
 
     private void cleanupStudentDataForModule(CourseModule module) {
-        log.info("Cleaning up data for module: {}", module.getModuleId());
         userAnswerRepository.deleteSelectedAnswerReferencesByModuleId(module.getModuleId());
         userAnswerRepository.deleteByModuleId(module.getModuleId());
         userQuizAttemptRepository.deleteByModuleId(module.getModuleId());
 
         for (CourseLesson lesson : module.getLessons()) {
-            // Delete quizzes
-            List<Quiz> quizzes = new ArrayList<>(lesson.getQuizzes());
-            for (Quiz quiz : quizzes) {
-                userAnswerRepository.deleteSelectedAnswerReferencesByQuizId(quiz.getId());
-                userAnswerRepository.deleteByQuizId(quiz.getId());
-                userQuizAttemptRepository.deleteByQuizId(quiz.getId());
-                lesson.removeQuizQuestion(quiz);
-                quizRepository.delete(quiz);
-                log.debug("Deleted quiz {} from lesson {}", quiz.getId(), lesson.getLessonId());
-            }
-
-            // Delete coding exercises
-            List<CodingExercise> exercises = new ArrayList<>(lesson.getCodingExercises());
-            for (CodingExercise ex : exercises) {
+            for (CodingExercise ex : lesson.getCodingExercises()) {
                 codingSubmissionRepository.deleteByExerciseId(ex.getExerciseId());
-                lesson.removeCodingExercise(ex);
-                codingExerciseRepository.delete(ex);
-                log.debug("Deleted coding exercise {} from lesson {}", ex.getExerciseId(), lesson.getLessonId());
             }
         }
     }
@@ -595,7 +586,6 @@ public class CourseTreeServiceImpl implements CourseTreeService {
         if (courseLessonRequests == null)
             courseLessonRequests = List.of();
 
-        log.info("Syncing lessons for module {}: {} lessons received", module.getModuleId(), courseLessonRequests.size());
         Map<UUID, CourseLesson> existing = new HashMap<>();
         for (CourseLesson l : module.getLessons()) {
             existing.put(l.getLessonId(), l);
@@ -604,96 +594,70 @@ public class CourseTreeServiceImpl implements CourseTreeService {
         List<CourseLesson> newList = new ArrayList<>();
 
         for (CourseLessonRequest lr : courseLessonRequests) {
-        UUID lessonId = lr.getLessonId();
-        CourseLesson lesson;
+            UUID lessonId = lr.getLessonId();
+            CourseLesson lesson;
 
-        if (lessonId != null && existing.containsKey(lessonId)) {
-            lesson = existing.get(lessonId);
-            existing.remove(lessonId); // Mark as kept
-        } else {
-            lesson = new CourseLesson();
-            lesson.setLessonId(null);
-            lesson.setModule(module);
-            lesson.setCreator(instructor);
-            // Khởi tạo collections để tránh NPE (new không qua Builder, @Builder.Default không áp dụng)
-            lesson.setCodingExercises(new java.util.ArrayList<>());
-            lesson.setQuizzes(new java.util.ArrayList<>());
-        }
-
-        if (lesson.getCreator() == null) {
-            lesson.setCreator(instructor);
-        }
-
-        lesson.setTitle(lr.getTitle());
-        lesson.setDescription(lr.getDescription());
-        lesson.setLessonType(lr.getLessonType());
-        lesson.setContent(lr.getContent());
-        lesson.setVideoUrl(lr.getVideoUrl());
-        lesson.setOrderIndex(lr.getOrderIndex());
-        lesson.setIsPreview(Boolean.TRUE.equals(lr.getIsPreview()));
-        lesson.setIsPublished(Boolean.TRUE.equals(lr.getIsPublished()));
-
-        String lessonSlug = lr.getSlug();
-        if (lessonSlug == null || lessonSlug.isBlank()) {
-            String title = lr.getTitle() != null ? lr.getTitle() : "lesson";
-            String baseSlug = slugify.slugify(title);
-            lessonSlug = generateUniqueLessonSlug(baseSlug);
-        }
-        lesson.setSlug(lessonSlug);
-
-        // === Xử lý YouTube Video URL ===
-        if (lr.getVideoUrl() != null && !lr.getVideoUrl().isBlank()) {
-            String ytVideoId = com.truongsonkmhd.unetistudy.common.YouTubeUtils
-                    .extractVideoId(lr.getVideoUrl().trim());
-            if (ytVideoId != null) {
-                lesson.setYoutubeVideoId(ytVideoId);
-                lesson.setVideoUrl(com.truongsonkmhd.unetistudy.common.YouTubeUtils.toEmbedUrl(ytVideoId));
+            if (lessonId != null && existing.containsKey(lessonId)) {
+                lesson = existing.get(lessonId);
             } else {
-                // Không phải YouTube URL hợp lệ - có thể báo lỗi hoặc bỏ qua
-                lesson.setVideoUrl(lr.getVideoUrl().trim());
-                lesson.setYoutubeVideoId(null);
+                lesson = new CourseLesson();
+                lesson.setLessonId(null);
+                lesson.setModule(module);
+                lesson.setCreator(instructor);
             }
-        }
 
-        // === Đồng bộ Coding Exercises và Quizzes ===
-        syncLessonExercises(lesson, lr.getExerciseTemplateIds());
-        syncLessonQuizzes(lesson, lr.getQuizTemplateIds());
+            if (lesson.getCreator() == null) {
+                lesson.setCreator(instructor);
+            }
+
+            lesson.setTitle(lr.getTitle());
+            lesson.setDescription(lr.getDescription());
+            lesson.setLessonType(lr.getLessonType());
+            lesson.setContent(lr.getContent());
+            lesson.setVideoUrl(lr.getVideoUrl());
+            lesson.setOrderIndex(lr.getOrderIndex());
+            lesson.setIsPreview(Boolean.TRUE.equals(lr.getIsPreview()));
+            lesson.setIsPublished(Boolean.TRUE.equals(lr.getIsPublished()));
+
+            String lessonSlug = lr.getSlug();
+            if (lessonSlug == null || lessonSlug.isBlank()) {
+                String title = lr.getTitle() != null ? lr.getTitle() : "lesson";
+                String baseSlug = slugify.slugify(title);
+                lessonSlug = generateUniqueLessonSlug(baseSlug);
+            }
+            lesson.setSlug(lessonSlug);
+
+            // === Xử lý YouTube Video URL ===
+            if (lr.getVideoUrl() != null && !lr.getVideoUrl().isBlank()) {
+                String ytVideoId = com.truongsonkmhd.unetistudy.common.YouTubeUtils
+                        .extractVideoId(lr.getVideoUrl().trim());
+                if (ytVideoId != null) {
+                    lesson.setYoutubeVideoId(ytVideoId);
+                    lesson.setVideoUrl(com.truongsonkmhd.unetistudy.common.YouTubeUtils.toEmbedUrl(ytVideoId)); // Lưu
+                    // embed
+                    // URL
+                    // trực
+                    // tiếp
+                } else {
+                    // Không phải YouTube URL hợp lệ - có thể báo lỗi hoặc bỏ qua
+                    lesson.setVideoUrl(lr.getVideoUrl().trim());
+                    lesson.setYoutubeVideoId(null);
+                }
+            }
+
+            syncLessonExercises(lesson, lr.getExerciseTemplateIds());
+            syncLessonQuizzes(lesson, lr.getQuizTemplateIds());
 
             newList.add(lesson);
         }
-
-    // Cleanup removed lessons
-        for (CourseLesson removedLesson : existing.values()) {
-        log.info("Cleaning up removed lesson: {}", removedLesson.getLessonId());
-
-        // Cleanup quizzes for removed lesson
-        List<Quiz> quizzes = new ArrayList<>(removedLesson.getQuizzes());
-        for (Quiz quiz : quizzes) {
-            userAnswerRepository.deleteSelectedAnswerReferencesByQuizId(quiz.getId());
-            userAnswerRepository.deleteByQuizId(quiz.getId());
-            userQuizAttemptRepository.deleteByQuizId(quiz.getId());
-            removedLesson.removeQuizQuestion(quiz);
-            quizRepository.delete(quiz);
-        }
-
-        // Cleanup exercises for removed lesson
-        List<CodingExercise> exercises = new ArrayList<>(removedLesson.getCodingExercises());
-        for (CodingExercise ex : exercises) {
-            codingSubmissionRepository.deleteByExerciseId(ex.getExerciseId());
-            removedLesson.removeCodingExercise(ex);
-            codingExerciseRepository.delete(ex);
-        }
-    }
 
         module.getLessons().clear();
         module.getLessons().addAll(newList);
     }
 
     private void syncLessonExercises(CourseLesson lesson, List<UUID> exerciseTemplateIds) {
-        log.info("Syncing exercises for lesson {}: {}", lesson.getLessonId(), exerciseTemplateIds);
-        if (exerciseTemplateIds == null) {
-            exerciseTemplateIds = new ArrayList<>();
-        }
+        if (exerciseTemplateIds == null)
+            return;
 
         Set<UUID> newTemplateIds = new HashSet<>(exerciseTemplateIds);
 
@@ -702,10 +666,8 @@ public class CourseTreeServiceImpl implements CourseTreeService {
                 .collect(Collectors.toList());
 
         for (CodingExercise ex : toRemove) {
-            log.info("Removing coding exercise: {}", ex.getExerciseId());
             codingSubmissionRepository.deleteByExerciseId(ex.getExerciseId());
             lesson.removeCodingExercise(ex);
-            codingExerciseRepository.delete(ex);
         }
 
         List<CodingExercise> orderedList = new ArrayList<>();
@@ -714,55 +676,19 @@ public class CourseTreeServiceImpl implements CourseTreeService {
                 .collect(Collectors.toMap(CodingExercise::getTemplateId, ex -> ex, (a, b) -> a));
 
         for (UUID templateId : exerciseTemplateIds) {
-            codingExerciseTemplateRepository.findById(templateId).ifPresentOrElse(template -> {
-                CodingExercise exercise;
-                if (remainingByTemplate.containsKey(templateId)) {
-                    // Update existing exercise instance with latest template data
-                    exercise = remainingByTemplate.get(templateId);
-                    exercise.setTitle(template.getTitle());
-                    exercise.setDescription(template.getDescription());
-                    exercise.setProgrammingLanguage(template.getProgrammingLanguage());
-                    exercise.setInitialCode(template.getInitialCode());
-                    exercise.setSolutionCode(template.getSolutionCode());
-                    exercise.setDifficulty(template.getDifficulty());
-                    exercise.setPoints(template.getPoints());
-                    exercise.setTimeLimitMs(template.getTimeLimitMs());
-                    exercise.setMemoryLimitMb(template.getMemoryLimitMb());
-                    exercise.setInputFormat(template.getInputFormat());
-                    exercise.setOutputFormat(template.getOutputFormat());
-                    exercise.setConstraintName(template.getConstraintName());
-                    exercise.setUpdatedAt(java.time.Instant.now());
-
-                    // Sync Test Cases: Clear old and add new from template
-                    exercise.getExerciseTestCases().clear();
-                    if (template.getExerciseTestCases() != null) {
-                        for (ExerciseTemplateTestCase tc : template.getExerciseTestCases()) {
-                            ExerciseTestCase newTc = ExerciseTestCase.builder()
-                                    .input(tc.getInput())
-                                    .expectedOutput(tc.getExpectedOutput())
-                                    .isSample(tc.getIsSample())
-                                    .explanation(tc.getExplanation())
-                                    .orderIndex(tc.getOrderIndex())
-                                    .build();
-                            exercise.addTestCase(newTc);
-                        }
-                    }
-                    
-                    exercise = codingExerciseRepository.save(exercise);
-                    log.info("Updated existing exercise {} with latest data and test cases from template {}", exercise.getExerciseId(), templateId);
-                } else {
-                    // Create new instance
-                    exercise = template.toContestExercise();
+            if (remainingByTemplate.containsKey(templateId)) {
+                orderedList.add(remainingByTemplate.get(templateId));
+            } else {
+                codingExerciseTemplateRepository.findById(templateId).ifPresent(template -> {
+                    CodingExercise exercise = template.toContestExercise();
                     exercise.setTemplateId(template.getTemplateId());
-                    exercise = codingExerciseRepository.save(exercise);
                     exercise.getCourseLessons().add(lesson);
-                    
+
+                    orderedList.add(exercise);
                     template.incrementUsageCount();
                     codingExerciseTemplateRepository.save(template);
-                    log.info("Created new exercise from template {}", templateId);
-                }
-                orderedList.add(exercise);
-            }, () -> log.warn("Template NOT FOUND: {}", templateId));
+                });
+            }
         }
 
         lesson.getCodingExercises().clear();
@@ -770,10 +696,8 @@ public class CourseTreeServiceImpl implements CourseTreeService {
     }
 
     private void syncLessonQuizzes(CourseLesson lesson, List<UUID> quizTemplateIds) {
-        log.info("Syncing quizzes for lesson {}: {}", lesson.getLessonId(), quizTemplateIds);
-        if (quizTemplateIds == null) {
-            quizTemplateIds = new ArrayList<>();
-        }
+        if (quizTemplateIds == null)
+            return;
         Set<UUID> newTemplateIds = new HashSet<>(quizTemplateIds);
 
         List<Quiz> toRemove = lesson.getQuizzes().stream()
@@ -781,12 +705,10 @@ public class CourseTreeServiceImpl implements CourseTreeService {
                 .collect(Collectors.toList());
 
         for (Quiz quiz : toRemove) {
-            log.info("Removing quiz: {}", quiz.getId());
             userAnswerRepository.deleteSelectedAnswerReferencesByQuizId(quiz.getId());
             userAnswerRepository.deleteByQuizId(quiz.getId());
             userQuizAttemptRepository.deleteByQuizId(quiz.getId());
             lesson.removeQuizQuestion(quiz);
-            quizRepository.delete(quiz);
         }
 
         List<Quiz> orderedList = new ArrayList<>();
@@ -795,32 +717,21 @@ public class CourseTreeServiceImpl implements CourseTreeService {
                 .collect(Collectors.toMap(Quiz::getTemplateId, q -> q, (a, b) -> a));
 
         for (UUID templateId : quizTemplateIds) {
-            quizTemplateRepository.findById(templateId).ifPresentOrElse(template -> {
-                Quiz quiz;
-                if (remainingByTemplate.containsKey(templateId)) {
-                    // Update existing quiz instance with latest template data
-                    quiz = remainingByTemplate.get(templateId);
-                    quiz.setTitle(template.getTitle());
-                    quiz.setTotalQuestions(template.getTotalQuestions());
-                    quiz.setPassScore(template.getPassScore());
-                    quiz.setMaxAttempts(template.getMaxAttempts());
-                    // Any other fields that need syncing...
-                    
-                    quiz = quizRepository.save(quiz);
-                    log.info("Updated existing quiz {} with latest data from template {}", quiz.getId(), templateId);
-                } else {
-                    // Create new instance
-                    quiz = template.toQuiz();
+            if (remainingByTemplate.containsKey(templateId)) {
+                // Keep existing instance
+                orderedList.add(remainingByTemplate.get(templateId));
+            } else {
+                // Add new instance from template
+                quizTemplateRepository.findById(templateId).ifPresent(template -> {
+                    Quiz quiz = template.toQuiz();
                     quiz.setTemplateId(template.getId());
-                    quiz = quizRepository.save(quiz);
                     quiz.getCourseLessons().add(lesson);
-                    
+
+                    orderedList.add(quiz);
                     template.incrementUsageCount();
                     quizTemplateRepository.save(template);
-                    log.info("Created new quiz from template {}", templateId);
-                }
-                orderedList.add(quiz);
-            }, () -> log.warn("Quiz Template NOT FOUND: {}", templateId));
+                });
+            }
         }
 
         // 5. Update the lesson's quizzes list

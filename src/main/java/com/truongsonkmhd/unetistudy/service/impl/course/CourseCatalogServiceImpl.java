@@ -1,10 +1,12 @@
 package com.truongsonkmhd.unetistudy.service.impl.course;
 
 import com.truongsonkmhd.unetistudy.cache.CacheConstants;
+import com.truongsonkmhd.unetistudy.context.UserContext;
 import com.truongsonkmhd.unetistudy.dto.course_dto.CourseCardResponse;
 import com.truongsonkmhd.unetistudy.dto.a_common.CursorResponse;
 import com.truongsonkmhd.unetistudy.dto.a_common.PageResponse;
 import com.truongsonkmhd.unetistudy.repository.course.CourseRepository;
+import com.truongsonkmhd.unetistudy.repository.course.LessonProgressRepository;
 import com.truongsonkmhd.unetistudy.service.CourseCatalogService;
 import com.truongsonkmhd.unetistudy.cache.service.CourseCacheService;
 import lombok.RequiredArgsConstructor;
@@ -17,9 +19,8 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.Base64;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Service quản lý Catalog khóa học với tích hợp Caching
@@ -36,12 +37,18 @@ public class CourseCatalogServiceImpl implements CourseCatalogService {
 
     private final CourseRepository courseRepository;
     private final CourseCacheService courseCacheService;
+    private final LessonProgressRepository lessonProgressRepository;
 
     @Override
     @Transactional(readOnly = true)
     public PageResponse<CourseCardResponse> getPublishedCourses(int page, int size, String q, String category) {
-        return courseCacheService.getCourseCatalog(page, size, q, "PUBLISHED", category,
+        // Chỉ cache phần data chung (không phụ thuộc user)
+        PageResponse<CourseCardResponse> cached = courseCacheService.getCourseCatalog(page, size, q, "PUBLISHED", category,
                 () -> queryPublishedCourses(page, size, q, category));
+
+        // Luôn tính progress sau cache vì đây là dữ liệu riêng per-user
+        enrichWithUserProgress(cached.getItems());
+        return cached;
     }
 
     @Transactional(readOnly = true)
@@ -64,6 +71,34 @@ public class CourseCatalogServiceImpl implements CourseCatalogService {
                 .totalPages(result.getTotalPages())
                 .hasNext(result.hasNext())
                 .build();
+    }
+
+    /**
+     * Enrich progressPercentage cho user hiện tại — luôn chạy, kể cả khi cache HIT.
+     * progressPercentage là dữ liệu per-user nên không được lưu vào cache.
+     */
+    private void enrichWithUserProgress(List<CourseCardResponse> items) {
+        UUID userId = UserContext.getUserID();
+        if (userId == null || items == null || items.isEmpty()) return;
+
+        List<UUID> courseIds = items.stream()
+                .map(CourseCardResponse::getCourseId)
+                .collect(Collectors.toList());
+
+        Map<UUID, Long> totalLessonsMap = lessonProgressRepository.countLessonsPerCourse(courseIds)
+                .stream()
+                .collect(Collectors.toMap(r -> (UUID) r[0], r -> (Long) r[1]));
+
+        Map<UUID, Long> completedMap = lessonProgressRepository
+                .countCompletedPerStudentPerCourse(List.of(userId), courseIds)
+                .stream()
+                .collect(Collectors.toMap(r -> (UUID) r[1], r -> (Long) r[2]));
+
+        items.forEach(card -> {
+            long total = totalLessonsMap.getOrDefault(card.getCourseId(), 0L);
+            long completed = completedMap.getOrDefault(card.getCourseId(), 0L);
+            card.setProgressPercentage(total > 0 ? (completed * 100.0 / total) : null);
+        });
     }
 
 }

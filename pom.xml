@@ -83,6 +83,14 @@
             <version>2.11.0</version>
         </dependency>
 
+        <!-- MapStruct Processor -->
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct-processor</artifactId>
+            <version>${mapstruct.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
         <!-- Health check -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
