@@ -39,7 +39,10 @@ public interface CourseRepository extends JpaRepository<Course, UUID> {
               c.publishedAt, 
               c.enrolledCount, 
               c.capacity, 
-              c.instructor.fullName
+              c.instructor.fullName,
+              c.showStudentCount,
+              c.showProgress,
+              0.0
           )
           from Course c
           where c.isPublished = true
@@ -57,7 +60,8 @@ public interface CourseRepository extends JpaRepository<Course, UUID> {
   @Query(value = """
           select new com.truongsonkmhd.unetistudy.dto.course_dto.CourseCardResponse(
               c.courseId,
-              c.title, c.slug, c.shortDescription, c.imageUrl, c.isPublished, CAST(size(c.modules) AS Integer), c.publishedAt, c.enrolledCount, c.capacity, c.instructor.fullName
+              c.title, c.slug, c.shortDescription, c.imageUrl, c.isPublished, CAST(size(c.modules) AS Integer), c.publishedAt, c.enrolledCount, c.capacity, c.instructor.fullName,
+              c.showStudentCount, c.showProgress, 0.0
           )
           from Course c
           where c.isPublished = true
@@ -89,7 +93,8 @@ public interface CourseRepository extends JpaRepository<Course, UUID> {
 
   @Query("""
           select new com.truongsonkmhd.unetistudy.dto.course_dto.CourseCardResponse(
-              c.courseId, c.title, c.slug, c.shortDescription, c.imageUrl, c.isPublished, CAST(size(c.modules) AS Integer), c.publishedAt, c.enrolledCount, c.capacity, c.instructor.fullName
+              c.courseId, c.title, c.slug, c.shortDescription, c.imageUrl, c.isPublished, CAST(size(c.modules) AS Integer), c.publishedAt, c.enrolledCount, c.capacity, c.instructor.fullName,
+              c.showStudentCount, c.showProgress, 0.0
           )
           from Course c
           where c.isPublished = true
@@ -125,7 +130,10 @@ public interface CourseRepository extends JpaRepository<Course, UUID> {
               c.publishedAt,
               c.enrolledCount,
               c.capacity,
-              c.instructor.fullName
+              c.instructor.fullName,
+              c.showStudentCount,
+              c.showProgress,
+              0.0
           )
           from Course c
           where (cast(:q as string) is null or lower(c.title) like lower(concat('%', cast(:q as string), '%'))
@@ -144,7 +152,8 @@ public interface CourseRepository extends JpaRepository<Course, UUID> {
 
   @Query("""
           select new com.truongsonkmhd.unetistudy.dto.course_dto.CourseCardResponse(
-              c.courseId, c.title, c.slug, c.shortDescription, c.imageUrl, c.isPublished, CAST(size(c.modules) AS Integer), c.publishedAt, c.enrolledCount, c.capacity, c.instructor.fullName
+              c.courseId, c.title, c.slug, c.shortDescription, c.imageUrl, c.isPublished, CAST(size(c.modules) AS Integer), c.publishedAt, c.enrolledCount, c.capacity, c.instructor.fullName,
+              c.showStudentCount, c.showProgress, 0.0
           )
           from Course c
           where c.isPublished = true

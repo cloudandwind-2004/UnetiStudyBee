@@ -4,8 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e767c9c7-cbe9-4347-b9f1-bc9b848d47c2" name="Changes" comment="update heap spacespace">
+    <list default="true" id="e767c9c7-cbe9-4347-b9f1-bc9b848d47c2" name="Changes" comment="update-code">
+      <change afterPath="$PROJECT_DIR$/.env_prod" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/truongsonkmhd/unetistudy/service/impl/coding/JudgeServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/truongsonkmhd/unetistudy/service/impl/coding/JudgeServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/application.yml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/application.yml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -28,12 +32,12 @@
     &quot;assignee&quot;: &quot;kiennguyenduc123&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/truongsonkmhd/UnetiStudyBee.git",
-    "accountId": "37582061-b9f0-4c3b-9bcc-df5ac1b6f81c"
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/truongsonkmhd/UnetiStudyBee.git&quot;,
+    &quot;accountId&quot;: &quot;c18146ea-3aaa-4a6f-9ec4-cf6ceda3d101&quot;
   }
-}]]></component>
+}</component>
   <component name="HighlightingSettingsPerFile">
     <setting file="file://$USER_HOME$/AppData/Local/Temp/tmp_2_JwtServiceImpl.class" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$USER_HOME$/AppData/Local/Temp/tmp_5_JwtServiceImpl.class" root0="FORCE_HIGHLIGHTING" />
@@ -62,27 +66,33 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Remote JVM Debug.Unnamed.executor&quot;: &quot;Debug&quot;,
-    &quot;RunOnceActivity.MCP Project settings loaded&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
-    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
-    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Remote JVM Debug.Unnamed.executor": "Debug",
+    "RunOnceActivity.MCP Project settings loaded": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "codeWithMe.voiceChat.enabledByDefault": "false",
+    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
+    "git-widget-placeholder": "master",
+    "junie.onboarding.icon.badge.shown": "true",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "/home/truongsonkmhd/DATN/UnetiStudyBee",
+    "node.js.detected.package.eslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "to.speed.mode.migration.done": "true",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$" />
+    </key>
+  </component>
   <component name="RunManager" selected="Remote JVM Debug.Unnamed">
     <configuration name="Unnamed" type="Remote" nameIsGenerated="true">
       <module name="UnetiStudyBee" />
@@ -141,9 +151,7 @@
       <workItem from="1774673327833" duration="6065000" />
       <workItem from="1774757234379" duration="6776000" />
       <workItem from="1774787859596" duration="335000" />
-      <workItem from="1775142634167" duration="6503000" />
-      <workItem from="1775179824441" duration="24400000" />
-      <workItem from="1775270025780" duration="13348000" />
+      <workItem from="1775142634167" duration="4136000" />
     </task>
     <task id="LOCAL-00001" summary="update-code">
       <option name="closed" value="true" />
@@ -153,39 +161,7 @@
       <option name="project" value="LOCAL" />
       <updated>1775108472730</updated>
     </task>
-    <task id="LOCAL-00002" summary="xóa permission , sửa lại logic soursesourse">
-      <option name="closed" value="true" />
-      <created>1775147049834</created>
-      <option name="number" value="00002" />
-      <option name="presentableId" value="LOCAL-00002" />
-      <option name="project" value="LOCAL" />
-      <updated>1775147049834</updated>
-    </task>
-    <task id="LOCAL-00003" summary="update chấm code (docker)">
-      <option name="closed" value="true" />
-      <created>1775277995316</created>
-      <option name="number" value="00003" />
-      <option name="presentableId" value="LOCAL-00003" />
-      <option name="project" value="LOCAL" />
-      <updated>1775277995316</updated>
-    </task>
-    <task id="LOCAL-00004" summary="update heap spacespace">
-      <option name="closed" value="true" />
-      <created>1775290890095</created>
-      <option name="number" value="00004" />
-      <option name="presentableId" value="LOCAL-00004" />
-      <option name="project" value="LOCAL" />
-      <updated>1775290890096</updated>
-    </task>
-    <task id="LOCAL-00005" summary="update heap spacespace">
-      <option name="closed" value="true" />
-      <created>1775292421573</created>
-      <option name="number" value="00005" />
-      <option name="presentableId" value="LOCAL-00005" />
-      <option name="project" value="LOCAL" />
-      <updated>1775292421573</updated>
-    </task>
-    <option name="localTasksCounter" value="6" />
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -204,10 +180,7 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="update-code" />
-    <MESSAGE value="xóa permission , sửa lại logic soursesourse" />
-    <MESSAGE value="update chấm code (docker)" />
-    <MESSAGE value="update heap spacespace" />
-    <option name="LAST_COMMIT_MESSAGE" value="update heap spacespace" />
+    <option name="LAST_COMMIT_MESSAGE" value="update-code" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -229,13 +202,8 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/truongsonkmhd/unetistudy/service/impl/course/CourseTreeServiceImpl.java</url>
-          <line>160</line>
-          <option name="timeStamp" value="90" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/main/java/com/truongsonkmhd/unetistudy/service/impl/course/CourseTreeServiceImpl.java</url>
-          <line>312</line>
-          <option name="timeStamp" value="91" />
+          <line>154</line>
+          <option name="timeStamp" value="89" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-method">
           <url>file://$PROJECT_DIR$/src/main/java/com/truongsonkmhd/unetistudy/service/AuthenticationService.java</url>
@@ -272,6 +240,15 @@
             <option name="WATCH_EXIT" value="false" />
           </properties>
           <option name="timeStamp" value="80" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-method">
+          <url>file://$PROJECT_DIR$/src/main/java/com/truongsonkmhd/unetistudy/service/impl/course/CourseCatalogServiceImpl.java</url>
+          <line>47</line>
+          <properties class="com.truongsonkmhd.unetistudy.service.impl.course.CourseCatalogServiceImpl">
+            <option name="EMULATED" value="true" />
+            <option name="WATCH_EXIT" value="false" />
+          </properties>
+          <option name="timeStamp" value="87" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

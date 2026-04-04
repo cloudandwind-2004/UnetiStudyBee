@@ -46,6 +46,7 @@ target/generated-test-sources/
 
 # ===== Env =====
 .env
+.env_prod
 application-local.yml
 application-dev.yml
 

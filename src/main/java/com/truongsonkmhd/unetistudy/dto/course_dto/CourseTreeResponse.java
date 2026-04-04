@@ -5,7 +5,6 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -25,9 +24,13 @@ public class CourseTreeResponse {
     String subCategory;
     Integer duration;
     Integer capacity;
-
+    String requirements;
+    String objectives;
+    String syllabus;
     List<String> learningOutcomes;
-    LocalDateTime publishedAt;
+    Boolean showStudentCount;
+    Boolean showProgress;
+    java.time.LocalDateTime publishedAt;
     Boolean isPublished;
     CourseStatus status;
     String imageUrl;
@@ -39,5 +42,6 @@ public class CourseTreeResponse {
     Integer enrolledCount;
     Double rating;
     Integer ratingCount;
+    Double progressPercentage;
     Instant updatedAt;
 }

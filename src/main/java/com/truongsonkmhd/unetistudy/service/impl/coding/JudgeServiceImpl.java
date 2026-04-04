@@ -26,7 +26,6 @@ import com.truongsonkmhd.unetistudy.strategy.coding.LanguageRunnerFactory;
 import com.truongsonkmhd.unetistudy.utils.DockerCodeExecutionUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jspecify.annotations.NonNull;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -300,7 +299,7 @@ public class JudgeServiceImpl implements JudgeService {
     }
 
     @Override
-    public JudgeRunResponseDTO runUserCode(@NonNull JudgeRequestDTO request) {
+    public JudgeRunResponseDTO runUserCode(JudgeRequestDTO request) {
         String folderName = "run-" + UUID.randomUUID();
         Path workingDir = hostBaseDir().resolve(folderName);
 

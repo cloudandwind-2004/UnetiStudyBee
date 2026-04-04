@@ -97,6 +97,15 @@ public class Course {
     @Builder.Default
     List<String> learningOutcomes = new ArrayList<>();
 
+    @Column(name = "show_student_count", nullable = false)
+    @Builder.Default
+    Boolean showStudentCount = true;
+
+    @Column(name = "show_progress", nullable = false)
+    @Builder.Default
+    Boolean showProgress = true;
+
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 30, nullable = false)
     @Builder.Default
