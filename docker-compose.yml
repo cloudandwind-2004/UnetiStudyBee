@@ -65,7 +65,7 @@ services:
       ML_SERVICE_URL: ${ML_SERVICE_URL:-http://host.docker.internal:8000}
 
       # thêm để JudgeService dùng
-      JUDGE_WORKDIR_HOST: /opt/judge-workdir
+      JUDGE_WORKDIR_HOST: /opt/judge-wocourseRepositoryrkdir
       JUDGE_WORKDIR_CONTAINER: /work
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock

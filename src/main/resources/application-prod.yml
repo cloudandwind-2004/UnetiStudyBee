@@ -5,10 +5,15 @@ spring:
   devtools:
     add-properties: true
   jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
     show-sql: false
     properties:
       hibernate:
-        format_sql: true
+        format_sql: false
+        generate_statistics: false
+        jdbc:
+          batch_size: 25
+        order_inserts: true
+        order_updates: true
