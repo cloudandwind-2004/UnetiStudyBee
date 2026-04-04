@@ -128,6 +128,18 @@ public class CourseTreeServiceImpl implements CourseTreeService {
             course.setStatus(CourseStatus.DRAFT);
         if (course.getIsPublished() == null)
             course.setIsPublished(req.getIsPublished() != null ? req.getIsPublished() : false);
+        
+        if (req.getShowStudentCount() != null) {
+            course.setShowStudentCount(req.getShowStudentCount());
+        } else if (course.getShowStudentCount() == null) {
+            course.setShowStudentCount(false);
+        }
+
+        if (req.getShowProgress() != null) {
+            course.setShowProgress(req.getShowProgress());
+        } else if (course.getShowProgress() == null) {
+            course.setShowProgress(false);
+        }
 
         if (Boolean.TRUE.equals(course.getIsPublished())) {
             if (course.getPublishedAt() == null) {
@@ -175,6 +187,13 @@ public class CourseTreeServiceImpl implements CourseTreeService {
         course.setIsPublished(req.getIsPublished());
         course.setPublishedAt(req.getPublishedAt());
         
+        if (req.getShowStudentCount() != null) {
+            course.setShowStudentCount(req.getShowStudentCount());
+        }
+        if (req.getShowProgress() != null) {
+            course.setShowProgress(req.getShowProgress());
+        }
+
         if (req.getLearningOutcomes() != null) {
             course.getLearningOutcomes().clear();
             course.getLearningOutcomes().addAll(req.getLearningOutcomes());
@@ -259,7 +278,7 @@ public class CourseTreeServiceImpl implements CourseTreeService {
 
     @Override
     public PageResponse<CourseCardResponse> getAllCourses(Integer page, Integer size, String q, String status,
-            String category) {
+                                                          String category) {
         log.debug("getAllCourses - page={}, size={}, q={}, status={}, category={}", page, size, q, status, category);
         return queryCourseCatalog(page, size, q, status, category);
     }
@@ -270,7 +289,7 @@ public class CourseTreeServiceImpl implements CourseTreeService {
      */
     @Transactional(readOnly = true)
     public PageResponse<CourseCardResponse> queryCourseCatalog(Integer page, Integer size, String q, String status,
-            String category) {
+                                                               String category) {
         log.debug("Cache MISS - Loading course catalog from DB");
         int safePage = (page != null) ? Math.max(page, 0) : 0;
         int safeSize = (size != null) ? Math.min(Math.max(size, 1), 50) : 10;
@@ -350,8 +369,8 @@ public class CourseTreeServiceImpl implements CourseTreeService {
     // =========================
 
     private CourseTreeResponse mapCourse(Course course, List<CourseModule> courseModule,
-            List<CourseLesson> courseLessons, Set<Role> roles, Map<UUID, List<CodingExercise>> exByLesson,
-            Map<UUID, List<Quiz>> quizByLesson) {
+                                         List<CourseLesson> courseLessons, Set<Role> roles, Map<UUID, List<CodingExercise>> exByLesson,
+                                         Map<UUID, List<Quiz>> quizByLesson) {
 
         List<CourseModuleResponse> modules = courseModule.stream()
                 .sorted(Comparator.comparing(CourseModule::getOrderIndex, NULL_SAFE_INT))
@@ -390,12 +409,12 @@ public class CourseTreeServiceImpl implements CourseTreeService {
                 .ratingCount(course.getRatingCount() != null ? course.getRatingCount() : 0)
                 .updatedAt(course.getUpdatedAt() != null ? course.getUpdatedAt()
                         : (course.getPublishedAt() != null ? course.getPublishedAt().toInstant(java.time.ZoneOffset.UTC)
-                                : java.time.Instant.now()))
+                        : java.time.Instant.now()))
                 .build();
     }
 
     private CourseModuleResponse mapModule(CourseModule m, List<CourseLesson> courseLessons, Set<Role> roles,
-            Map<UUID, List<CodingExercise>> exByLesson, Map<UUID, List<Quiz>> quizByLesson) {
+                                           Map<UUID, List<CodingExercise>> exByLesson, Map<UUID, List<Quiz>> quizByLesson) {
 
         List<CourseLessonResponse> lessons = courseLessons.stream()
                 .filter(l -> l.getModule() != null && l.getModule().getModuleId().equals(m.getModuleId()))
@@ -413,7 +432,7 @@ public class CourseTreeServiceImpl implements CourseTreeService {
     }
 
     private CourseLessonResponse mapLesson(CourseLesson courseLesson,
-            Map<UUID, List<CodingExercise>> exByLesson, Map<UUID, List<Quiz>> quizByLesson) {
+                                           Map<UUID, List<CodingExercise>> exByLesson, Map<UUID, List<Quiz>> quizByLesson) {
 
         List<CodingExerciseDTO> coding = exByLesson.getOrDefault(courseLesson.getLessonId(), List.of()).stream()
                 .filter(e -> allowPublished(e.getIsPublished()))
@@ -615,10 +634,10 @@ public class CourseTreeServiceImpl implements CourseTreeService {
                 if (ytVideoId != null) {
                     lesson.setYoutubeVideoId(ytVideoId);
                     lesson.setVideoUrl(com.truongsonkmhd.unetistudy.common.YouTubeUtils.toEmbedUrl(ytVideoId)); // Lưu
-                                                                                                                // embed
-                                                                                                                // URL
-                                                                                                                // trực
-                                                                                                                // tiếp
+                    // embed
+                    // URL
+                    // trực
+                    // tiếp
                 } else {
                     // Không phải YouTube URL hợp lệ - có thể báo lỗi hoặc bỏ qua
                     lesson.setVideoUrl(lr.getVideoUrl().trim());

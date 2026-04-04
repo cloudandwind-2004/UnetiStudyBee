@@ -36,9 +36,13 @@ public class CourseShowRequest {
     String requirements; // Yêu cầu đầu vào
     String objectives; // Mục tiêu học tập
     String syllabus; // Đề cương
-    
+
     @Builder.Default
     List<String> learningOutcomes = new ArrayList<>(); // Bạn sẽ học được gì
+
+    Boolean showStudentCount;
+    Boolean showProgress;
+
     Boolean isPublished; // Có xuất bản ngay không
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")

@@ -28,6 +28,8 @@ public class CourseTreeResponse {
     String objectives;
     String syllabus;
     List<String> learningOutcomes;
+    Boolean showStudentCount;
+    Boolean showProgress;
     java.time.LocalDateTime publishedAt;
     Boolean isPublished;
     CourseStatus status;
@@ -40,5 +42,6 @@ public class CourseTreeResponse {
     Integer enrolledCount;
     Double rating;
     Integer ratingCount;
+    Double progressPercentage;
     Instant updatedAt;
 }
