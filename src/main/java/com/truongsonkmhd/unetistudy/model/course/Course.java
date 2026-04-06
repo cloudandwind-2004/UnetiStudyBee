@@ -74,14 +74,6 @@ public class Course {
     @Builder.Default
     Integer enrolledCount = 0;
 
-    @Column(name = "rating", precision = 3, scale = 2, nullable = false)
-    @Builder.Default
-    BigDecimal rating = BigDecimal.ZERO;
-
-    @Column(name = "rating_count", nullable = false)
-    @Builder.Default
-    Integer ratingCount = 0;
-
     @Column(name = "image_url", length = 255)
     String imageUrl;
 
@@ -104,7 +96,6 @@ public class Course {
     @Column(name = "show_progress", nullable = false)
     @Builder.Default
     Boolean showProgress = true;
-
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 30, nullable = false)

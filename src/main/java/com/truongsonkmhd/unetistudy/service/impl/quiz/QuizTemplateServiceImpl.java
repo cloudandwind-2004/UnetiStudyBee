@@ -289,7 +289,7 @@ public class QuizTemplateServiceImpl implements QuizTemplateService {
                 .isDeleted(false)
                 .build();
 
-        original.getQuestionTemplates().forEach(qt -> {
+        original.getQuestionTemplates().stream().distinct().forEach(qt -> {
             QuestionTemplate duplicateQuestion = QuestionTemplate.builder()
                     .content(qt.getContent())
                     .questionOrder(qt.getQuestionOrder())

@@ -10,6 +10,8 @@ COPY .mvn .mvn
 COPY pom.xml .
 COPY src src
 
+ENV MAVEN_OPTS="-Xmx512m -Xms256m -XX:MaxMetaspaceSize=192m"
+
 RUN chmod +x mvnw \
   && sed -i 's/\r$//' mvnw \
   && ./mvnw -q -DskipTests dependency:go-offline \
@@ -29,8 +31,16 @@ RUN apt-get update \
 
 COPY --from=build /app/target/*.jar app.jar
 
-EXPOSE 8097 5005
+EXPOSE 8097
 
-# Bật remote debug port 5005
-# suspend=n: app chạy luôn;  đổi y nếu muốn app chờ IDE attach rồi mới chạy
-ENTRYPOINT ["sh", "-c", "java ${JAVA_OPTS} -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 -jar app.jar"]
+ENTRYPOINT ["sh", "-c", "java \
+  -Xmx300m \
+  -Xms200m \
+  -XX:MaxMetaspaceSize=128m \
+  -XX:+UseSerialGC \
+  -XX:ReservedCodeCacheSize=64m \
+  -Xss512k \
+  -XX:+TieredCompilation \
+  -XX:TieredStopAtLevel=1 \
+  ${JAVA_OPTS} \
+  -jar app.jar"]

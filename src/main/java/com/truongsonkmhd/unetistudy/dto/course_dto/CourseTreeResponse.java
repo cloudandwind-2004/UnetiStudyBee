@@ -40,8 +40,6 @@ public class CourseTreeResponse {
     List<CourseModuleResponse> modules;
 
     Integer enrolledCount;
-    Double rating;
-    Integer ratingCount;
     Double progressPercentage;
     Instant updatedAt;
 }

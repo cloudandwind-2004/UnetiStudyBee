@@ -55,6 +55,7 @@ public class QuizTemplateMapper {
                 .version(template.getVersion())
                 .maxAttempts(template.getMaxAttempts())
                 .questions(template.getQuestionTemplates() != null ? template.getQuestionTemplates().stream()
+                        .distinct()
                         .map(this::toQuestionResponse)
                         .collect(Collectors.toList()) : null)
                 .createdAt(template.getCreatedAt())
@@ -144,7 +145,7 @@ public class QuizTemplateMapper {
                 .isPublished(true)
                 .build();
 
-        template.getQuestionTemplates().forEach(qt -> {
+        template.getQuestionTemplates().stream().distinct().forEach(qt -> {
             Question question = Question.builder()
                     .content(qt.getContent())
                     .questionOrder(qt.getQuestionOrder())

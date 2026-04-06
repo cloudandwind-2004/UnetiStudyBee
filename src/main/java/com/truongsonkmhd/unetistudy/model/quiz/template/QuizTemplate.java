@@ -46,7 +46,7 @@ public class QuizTemplate extends BaseEntityQuiz {
                 .build();
 
         if (this.getQuestionTemplates() != null) {
-            this.getQuestionTemplates().forEach(questionTemplate -> {
+            this.getQuestionTemplates().stream().distinct().forEach(questionTemplate -> {
                 quiz.addQuestion(questionTemplate.toQuestion());
             });
 

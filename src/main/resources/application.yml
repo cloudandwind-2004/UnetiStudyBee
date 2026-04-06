@@ -15,8 +15,9 @@ spring:
     password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: 4
+      maximum-pool-size: 3
       minimum-idle: 1
+      idle-timeout: 30000
 
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.xml
@@ -49,8 +50,8 @@ spring:
     listener:
       simple:
         acknowledge-mode: manual
-        concurrency: 5
-        max-concurrency: 10
+        concurrency: 2
+        max-concurrency: 5
         prefetch: 1
         retry:
           enabled: false
@@ -74,42 +75,42 @@ spring:
   cache:
     type: caffeine
     caffeine:
-      spec: maximumSize=1000,expireAfterWrite=900s,recordStats
+      spec: maximumSize=200,expireAfterWrite=900s
 
 # Custom Cache Configuration
 app:
   cache:
     type: caffeine
     default-ttl: 900
-    default-max-size: 1000
-    record-stats: true
+    default-max-size: 200
+    record-stats: false
     write-behind-enabled: false
     write-behind-delay-ms: 5000
     write-behind-batch-size: 100
     caches:
       user_by_id:
         ttl: 900
-        max-size: 1000
+        max-size: 200
         eviction-policy: LRU
       user_by_username:
         ttl: 900
-        max-size: 1000
+        max-size: 200
         eviction-policy: LRU
       course_published_tree:
         ttl: 3600
-        max-size: 500
+        max-size: 100
         eviction-policy: LRU
       quiz_by_id:
         ttl: 900
-        max-size: 500
+        max-size: 100
         eviction-policy: LRU
       roles:
         ttl: 21600
-        max-size: 100
+        max-size: 50
         eviction-policy: LFU
       permissions:
         ttl: 21600
-        max-size: 100
+        max-size: 50
         eviction-policy: LFU
         
 supabase:

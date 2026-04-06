@@ -23,8 +23,6 @@ public interface CourseRequestMapper extends EntityMapper<CourseShowRequest, Cou
 
     //  set default hệ thống để KHÔNG bao giờ null
     @Mapping(target = "enrolledCount", constant = "0")
-    @Mapping(target = "rating", expression = "java(java.math.BigDecimal.ZERO)")
-    @Mapping(target = "ratingCount", constant = "0")
 
     // status/publish mặc định
     @Mapping(target = "isPublished", expression = "java(dto.getIsPublished() != null ? dto.getIsPublished() : false)")

@@ -21,7 +21,6 @@ public abstract class CourseResponseMapper implements EntityMapper<CourseTreeRes
     @Mapping(target = "youtubeVideoId", source = "youtubeVideoId")
     @Mapping(target = "embedUrl", expression = "java(YouTubeUtils.toEmbedUrl(entity.getYoutubeVideoId()))")
     @Mapping(target = "videoUrl", expression = "java(entity.getYoutubeVideoId() != null ? YouTubeUtils.toEmbedUrl(entity.getYoutubeVideoId()) : storageService.toDisplayUrl(entity.getVideoUrl()))")
-    @Mapping(target = "rating", expression = "java(entity.getRating() != null ? entity.getRating().doubleValue() : 0.0)")
     public abstract CourseTreeResponse toDto(Course entity);
 
     @Override

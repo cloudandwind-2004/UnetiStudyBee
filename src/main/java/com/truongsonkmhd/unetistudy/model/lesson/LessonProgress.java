@@ -47,13 +47,16 @@ public class LessonProgress {
         @JoinColumn(name = "lesson_id", nullable = false)
         CourseLesson lesson;
 
+        @Builder.Default
         @Enumerated(EnumType.STRING)
         @Column(name = "status", nullable = false, length = 20)
         ProgressStatus status = ProgressStatus.NOT_STARTED;
 
+        @Builder.Default
         @Column(name = "completion_percent", nullable = false)
         Integer completionPercent = 0;
 
+        @Builder.Default
         @Column(name = "time_spent_sec", nullable = false)
         Integer timeSpentSec = 0;
 

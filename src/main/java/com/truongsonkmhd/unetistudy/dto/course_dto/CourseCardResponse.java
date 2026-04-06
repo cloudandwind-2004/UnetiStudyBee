@@ -23,7 +23,7 @@ public class CourseCardResponse {
     private Integer enrolledCount;
     private Integer capacity;
     private String instructorName;
-    private Boolean showStudentCount;
+    private Boolean showStudentCount;       
     private Boolean showProgress;
     private Double progressPercentage;
 }

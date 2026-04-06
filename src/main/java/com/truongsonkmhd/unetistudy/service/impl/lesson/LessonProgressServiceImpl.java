@@ -125,7 +125,7 @@ public class LessonProgressServiceImpl implements LessonProgressService {
 
         if (progress.getStatus() != ProgressStatus.DONE ||
                 (request.getCompletionPercent() != null
-                        && request.getCompletionPercent() > progress.getCompletionPercent())) {
+                        && request.getCompletionPercent() > (progress.getCompletionPercent() != null ? progress.getCompletionPercent() : 0))) {
             progress.setCompletionPercent(
                     request.getCompletionPercent() != null ? request.getCompletionPercent() : 0);
         }

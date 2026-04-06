@@ -163,17 +163,20 @@ public class SecurityConfiguration {
         @Bean
         public CorsConfigurationSource corsConfigurationSource() {
                 CorsConfiguration config = new CorsConfiguration();
-                config.setAllowedOrigins(List.of(
+                config.setAllowedOriginPatterns(List.of(
                                 "http://localhost:8080",
                                 "http://localhost:8081",
                                 "http://localhost:5173",
                                 "http://localhost:4221",
-                                "https://localhost:4221"));
+                                "https://localhost:4221",
+                                "https://unetistudyfee.onrender.com",
+                                "https://uneti-study-fee.onrender.com",
+                                "https://*.onrender.com"));
                 config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
                 config.setAllowedHeaders(List.of("*"));
                 config.setExposedHeaders(List.of("Authorization", "Link", "X-Total-Count"));
                 config.setAllowCredentials(true);
-                config.setMaxAge(1800L);
+                config.setMaxAge(3600L);
 
                 UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
                 source.registerCorsConfiguration("/**", config);

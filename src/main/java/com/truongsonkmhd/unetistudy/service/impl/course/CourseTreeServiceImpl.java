@@ -119,10 +119,6 @@ public class CourseTreeServiceImpl implements CourseTreeService {
 
         if (course.getEnrolledCount() == null)
             course.setEnrolledCount(0);
-        if (course.getRating() == null)
-            course.setRating(java.math.BigDecimal.ZERO);
-        if (course.getRatingCount() == null)
-            course.setRatingCount(0);
 
         if (course.getStatus() == null)
             course.setStatus(CourseStatus.DRAFT);
@@ -283,14 +279,10 @@ public class CourseTreeServiceImpl implements CourseTreeService {
         return queryCourseCatalog(page, size, q, status, category);
     }
 
-    /**
-     * Thực hiện query thực sự từ DB — chỉ được gọi khi cache MISS.
-     * Tách riêng thành method có @Transactional để Spring proxy hoạt động đúng.
-     */
+
     @Transactional(readOnly = true)
     public PageResponse<CourseCardResponse> queryCourseCatalog(Integer page, Integer size, String q, String status,
                                                                String category) {
-        log.debug("Cache MISS - Loading course catalog from DB");
         int safePage = (page != null) ? Math.max(page, 0) : 0;
         int safeSize = (size != null) ? Math.min(Math.max(size, 1), 50) : 10;
 
@@ -405,8 +397,6 @@ public class CourseTreeServiceImpl implements CourseTreeService {
                 .embedUrl(embedUrl)
                 .modules(modules)
                 .enrolledCount(course.getEnrolledCount() != null ? course.getEnrolledCount() : 0)
-                .rating(course.getRating() != null ? course.getRating().doubleValue() : 0.0)
-                .ratingCount(course.getRatingCount() != null ? course.getRatingCount() : 0)
                 .updatedAt(course.getUpdatedAt() != null ? course.getUpdatedAt()
                         : (course.getPublishedAt() != null ? course.getPublishedAt().toInstant(java.time.ZoneOffset.UTC)
                         : java.time.Instant.now()))
