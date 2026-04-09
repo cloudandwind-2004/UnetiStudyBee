@@ -291,6 +291,43 @@ public class ClassServiceImpl implements ClassService {
         }
 
         private ClassCourseResponse mapCourseToResponse(Course course) {
+                // Count lessons by type from modules → lessons
+                int totalLessons = 0;
+                int videoCount = 0;
+                int quizCount = 0;
+                int codingCount = 0;
+
+                if (course.getModules() != null) {
+                        for (var module : course.getModules()) {
+                                if (module.getLessons() != null) {
+                                        for (var lesson : module.getLessons()) {
+                                                if (lesson.isDeleted()) continue;
+                                                totalLessons++;
+                                                if (lesson.getLessonType() != null) {
+                                                        switch (lesson.getLessonType()) {
+                                                                case VIDEO -> videoCount++;
+                                                                case QUIZ -> quizCount++;
+                                                                case CODE -> codingCount++;
+                                                                case CODE_AND_QUIZ -> { quizCount++; codingCount++; }
+                                                                case QUIZ_AND_VIDEO -> { quizCount++; videoCount++; }
+                                                                case CODE_AND_VIDEO -> { codingCount++; videoCount++; }
+                                                                case ALL -> { videoCount++; quizCount++; codingCount++; }
+                                                        }
+                                                }
+                                                // Also check for standalone video URL
+                                                if (lesson.getVideoUrl() != null && !lesson.getVideoUrl().isBlank()
+                                                        && lesson.getLessonType() != null
+                                                        && lesson.getLessonType() != com.truongsonkmhd.unetistudy.common.LessonType.VIDEO
+                                                        && lesson.getLessonType() != com.truongsonkmhd.unetistudy.common.LessonType.QUIZ_AND_VIDEO
+                                                        && lesson.getLessonType() != com.truongsonkmhd.unetistudy.common.LessonType.CODE_AND_VIDEO
+                                                        && lesson.getLessonType() != com.truongsonkmhd.unetistudy.common.LessonType.ALL) {
+                                                        videoCount++;
+                                                }
+                                        }
+                                }
+                        }
+                }
+
                 return ClassCourseResponse.builder()
                                 .courseId(course.getCourseId())
                                 .title(course.getTitle())
@@ -300,6 +337,11 @@ public class ClassServiceImpl implements ClassService {
                                 .category(course.getCategory())
                                 .capacity(course.getCapacity())
                                 .enrolledCount(course.getEnrolledCount())
+                                .description(course.getShortDescription() != null ? course.getShortDescription() : course.getDescription())
+                                .lessonCount(totalLessons)
+                                .videoCount(videoCount)
+                                .quizCount(quizCount)
+                                .codingCount(codingCount)
                                 .build();
         }
 

@@ -4,7 +4,8 @@ import com.truongsonkmhd.unetistudy.dto.a_common.IResponseMessage;
 import com.truongsonkmhd.unetistudy.dto.a_common.ResponseMessage;
 import com.truongsonkmhd.unetistudy.dto.contest_lesson.CreateClassContestRequest;
 import com.truongsonkmhd.unetistudy.dto.contest_lesson.RescheduleClassContestRequest;
-import com.truongsonkmhd.unetistudy.service.ClassContestService;
+import com.truongsonkmhd.unetistudy.service.impl.lesson.ClassContestServiceImpl;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,7 +22,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ClassContestController {
 
-        private final ClassContestService classContestService;
+        private final ClassContestServiceImpl classContestService;
 
         // ================= CREATE =================
         @PostMapping("/contests")
@@ -102,5 +103,29 @@ public class ClassContestController {
                                 ResponseMessage.UpdatedSuccess(
                                                 classContestService.updateContestStatuses(
                                                                 classId)));
+        }
+
+        // ================= GRADEBOOK: Bảng điểm theo bài thi cụ thể =================
+        @GetMapping("/gradebook/{classContestId}")
+        @Operation(summary = "Lấy bảng điểm cho một bài thi cụ thể trong lớp")
+        public ResponseEntity<IResponseMessage> getGradebook(
+                        @PathVariable UUID classContestId) {
+
+                return ResponseEntity.ok(
+                                ResponseMessage.LoadedSuccess(
+                                                classContestService.getGradebook(classContestId)));
+        }
+
+        // ================= GRADEBOOK: Lọc theo lớp + bài thi =================
+        @GetMapping("/gradebook")
+        @Operation(summary = "Lấy bảng điểm lọc theo lớp và bài thi")
+        public ResponseEntity<IResponseMessage> getGradebookByFilter(
+                        @RequestParam UUID classId,
+                        @RequestParam UUID contestLessonId) {
+
+                return ResponseEntity.ok(
+                                ResponseMessage.LoadedSuccess(
+                                                classContestService.getGradebookByClassAndContest(
+                                                                classId, contestLessonId)));
         }
 }

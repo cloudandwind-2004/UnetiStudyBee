@@ -270,6 +270,7 @@ public class ClassContestSubmissionServiceImpl implements ClassContestSubmission
                 .classContestId(cc.getClassContestId())
                 .title(cl.getTitle())
                 .description(cl.getDescription())
+                .contestType(cl.getContestType())
                 .startTime(cc.getScheduledStartTime())
                 .endTime(cc.getScheduledEndTime())
                 .durationMinutes(cc.getDurationInMinutes())

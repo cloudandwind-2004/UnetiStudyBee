@@ -1,5 +1,6 @@
 package com.truongsonkmhd.unetistudy.dto.contest_lesson;
 
+import com.truongsonkmhd.unetistudy.common.ContestType;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -17,6 +18,7 @@ public class ContestSessionResponse {
     UUID classContestId;
     String title;
     String description;
+    ContestType contestType;
     Instant startTime;
     Instant endTime;
     Long durationMinutes;

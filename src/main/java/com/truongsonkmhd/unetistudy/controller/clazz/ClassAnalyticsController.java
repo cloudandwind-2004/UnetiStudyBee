@@ -2,6 +2,7 @@ package com.truongsonkmhd.unetistudy.controller.clazz;
 
 import com.truongsonkmhd.unetistudy.dto.a_common.IResponseMessage;
 import com.truongsonkmhd.unetistudy.dto.a_common.ResponseMessage;
+import com.truongsonkmhd.unetistudy.dto.ml_dto.RiskEmailRequestDTO;
 import com.truongsonkmhd.unetistudy.service.impl.ClassAnalyticsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -17,9 +18,9 @@ import java.util.UUID;
  * Chỉ giáo viên của lớp mới được gọi (phân quyền cấu hình tại Security layer).
  *
  * GET /api/class/{classId}/analytics/behavioral    — Phân nhóm hành vi học tập
- * GET /api/class/{classId}/analytics/performance   — Phân nhóm năng lực
  * GET /api/class/{classId}/analytics/risk-cluster  — Phân nhóm rủi ro (KMeans)
  * GET /api/class/{classId}/analytics/risk-predict  — Dự đoán bỏ học (RandomForest)
+ * POST /api/class/{classId}/analytics/send-risk-email — Gửi email cảnh báo rủi ro
  */
 @RestController
 @RequestMapping("/api/class/{classId}/analytics")
@@ -38,13 +39,6 @@ public class ClassAnalyticsController {
                 ResponseMessage.LoadedSuccess(classAnalyticsService.clusterBehavioral(classId)));
     }
 
-    @GetMapping("/performance")
-    @Operation(summary = "Phân nhóm năng lực học tập của học sinh trong lớp")
-    public ResponseEntity<IResponseMessage> clusterPerformance(@PathVariable UUID classId) {
-        log.info("[ClassAnalytics] Performance request classId={}", classId);
-        return ResponseEntity.ok().body(
-                ResponseMessage.LoadedSuccess(classAnalyticsService.clusterPerformance(classId)));
-    }
 
     @GetMapping("/risk-cluster")
     @Operation(summary = "Phân nhóm rủi ro bỏ học bằng KMeans")
@@ -60,5 +54,15 @@ public class ClassAnalyticsController {
         log.info("[ClassAnalytics] Risk-predict request classId={}", classId);
         return ResponseEntity.ok().body(
                 ResponseMessage.LoadedSuccess(classAnalyticsService.predictRisk(classId)));
+    }
+
+    @PostMapping("/send-risk-email")
+    @Operation(summary = "Gửi email cảnh báo rủi ro tới danh sách học sinh")
+    public ResponseEntity<IResponseMessage> sendRiskEmail(
+            @PathVariable UUID classId,
+            @RequestBody RiskEmailRequestDTO request) {
+        log.info("[ClassAnalytics] Send-email request classId={}, riskLevel={}", classId, request.getRiskLevel());
+        classAnalyticsService.sendRiskEmail(classId, request);
+        return ResponseEntity.ok().body(ResponseMessage.ProcessSuccess("Gửi email thành công"));
     }
 }

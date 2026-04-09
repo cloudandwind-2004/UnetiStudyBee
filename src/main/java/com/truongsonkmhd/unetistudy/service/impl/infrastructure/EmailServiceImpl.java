@@ -1,12 +1,19 @@
 package com.truongsonkmhd.unetistudy.service.impl.infrastructure;
 
 import com.truongsonkmhd.unetistudy.service.infrastructure.EmailService;
+import com.truongsonkmhd.unetistudy.utils.EmailTemplateUtils;
+import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.mail.SimpleMailMessage;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+/**
+ * Phiên bản gửi OTP trực tiếp - Bỏ qua RabbitMQ.
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -14,23 +21,30 @@ public class EmailServiceImpl implements EmailService {
 
     private final JavaMailSender mailSender;
 
+    @Value("${spring.mail.username}")
+    private String fromEmail;
+
     @Override
+    @Async
     public void sendOtpEmail(String to, String otp) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(to);
-        message.setSubject("Mã OTP khôi phục mật khẩu - Uneti Study");
-        message.setText("Chào bạn,\n\n" +
-                "Mã OTP để khôi phục mật khẩu của bạn là: " + otp + "\n" +
-                "Mã này có hiệu lực trong 2 phút. Vui lòng không cung cấp mã này cho bất kỳ ai.\n\n" +
-                "Trân trọng,\n" +
-                "Uneti Study Team");
+        log.info("[EmailService] Đang gửi OTP cho {} trực tiếp qua SMTP...", to);
 
         try {
-            mailSender.send(message);
-            log.info("Email sent successfully to {}", to);
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+
+            String htmlBody = EmailTemplateUtils.getOtpTemplate(otp);
+
+            helper.setFrom(fromEmail);
+            helper.setTo(to);
+            helper.setSubject("Mã OTP xác thực - Uneti Study");
+            helper.setText(htmlBody, true);
+
+            mailSender.send(mimeMessage);
+            log.info("[EmailService] ✅ Đã gửi OTP thành công cho {}.", to);
+            
         } catch (Exception e) {
-            log.error("Failed to send email to {}: {}", to, e.getMessage());
-            throw new RuntimeException("Could not send email. Please try again later.");
+            log.error("[EmailService] ❌ Lỗi khi gửi OTP cho {}: {}", to, e.getMessage());
         }
     }
 }

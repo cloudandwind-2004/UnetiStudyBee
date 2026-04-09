@@ -1,5 +1,6 @@
 package com.truongsonkmhd.unetistudy.service;
 
+import com.truongsonkmhd.unetistudy.common.ContestType;
 import com.truongsonkmhd.unetistudy.common.StatusContest;
 import com.truongsonkmhd.unetistudy.dto.a_common.PageResponse;
 import com.truongsonkmhd.unetistudy.dto.contest_lesson.ContestLessonRequestDTO;
@@ -16,12 +17,14 @@ public interface ContestLessonService {
                         int page,
                         int size,
                         String q,
-                        StatusContest statusContest);
+                        StatusContest statusContest,
+                        ContestType contestType);
 
         PageResponse<ContestLessonSummaryDTO> getPageReadyContestLessons(
                         int page,
                         int size,
-                        String q);
+                        String q,
+                        ContestType contestType);
 
         ContestLessonResponseDTO updateContestLesson(UUID id, ContestLessonRequestDTO request);
         

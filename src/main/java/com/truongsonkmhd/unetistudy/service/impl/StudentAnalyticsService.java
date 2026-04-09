@@ -38,16 +38,8 @@ public class StudentAnalyticsService {
         return mlServiceClient.cluster(req);
     }
 
-    /** Phân nhóm học sinh theo năng lực (quiz + coding) */
-    public ClusterResponseDTO clusterPerformance(String courseId) {
-        List<StudentPerformanceFeatureDTO> students = buildFakePerformanceData(courseId);
-        log.info("[Analytics] Performance clustering: {} students, course={}", students.size(), courseId);
-        ClusterRequestDTO req = ClusterRequestDTO.builder()
-                .clusterType("PERFORMANCE")
-                .students(students)
-                .build();
-        return mlServiceClient.cluster(req);
-    }
+
+
 
     /** Phân nhóm học sinh theo nguy cơ bỏ học (KMeans 3 nhóm) */
     public ClusterResponseDTO clusterRisk(String courseId) {
@@ -141,73 +133,8 @@ public class StudentAnalyticsService {
         return list;
     }
 
-    /**
-     * Tạo 250 bản ghi năng lực học tập theo 4 nhóm:
-     * - Strong         ~25%: quiz cao + coding cao
-     * - Theory Strong  ~25%: quiz cao, coding thấp
-     * - Practice Strong~25%: quiz thấp, coding cao
-     * - Weak           ~25%: cả hai thấp
-     */
-    private List<StudentPerformanceFeatureDTO> buildFakePerformanceData(String courseId) {
-        List<StudentPerformanceFeatureDTO> list = new ArrayList<>();
-        Random rng = new Random(42);
 
-        String resolvedCourse = (courseId != null && !courseId.isBlank()) ? courseId : FAKE_COURSE_ID;
 
-        // Strong (~62 học sinh)
-        for (int i = 1; i <= 62; i++) {
-            list.add(StudentPerformanceFeatureDTO.builder()
-                    .userId("student-" + String.format("%03d", i))
-                    .courseId(resolvedCourse)
-                    .quizAvgScore(round(7.5 + rng.nextDouble() * 2.5))             // 7.5–10
-                    .quizFailRate(round(rng.nextDouble() * 0.15))                   // 0–0.15
-                    .codingAcRate(round(0.75 + rng.nextDouble() * 0.25))           // 0.75–1.00
-                    .avgRuntimeMs(round(100 + rng.nextDouble() * 200))             // 100–300ms
-                    .attemptCount(3 + rng.nextInt(5))                              // 3–7 lần
-                    .build());
-        }
-
-        // Theory Strong (~63 học sinh)
-        for (int i = 63; i <= 125; i++) {
-            list.add(StudentPerformanceFeatureDTO.builder()
-                    .userId("student-" + String.format("%03d", i))
-                    .courseId(resolvedCourse)
-                    .quizAvgScore(round(7.0 + rng.nextDouble() * 3.0))             // 7.0–10
-                    .quizFailRate(round(rng.nextDouble() * 0.20))                   // 0–0.20
-                    .codingAcRate(round(rng.nextDouble() * 0.35))                   // 0.00–0.35
-                    .avgRuntimeMs(round(400 + rng.nextDouble() * 600))             // 400–1000ms
-                    .attemptCount(5 + rng.nextInt(8))                              // 5–12 lần
-                    .build());
-        }
-
-        // Practice Strong (~62 học sinh)
-        for (int i = 126; i <= 187; i++) {
-            list.add(StudentPerformanceFeatureDTO.builder()
-                    .userId("student-" + String.format("%03d", i))
-                    .courseId(resolvedCourse)
-                    .quizAvgScore(round(3.0 + rng.nextDouble() * 3.0))             // 3.0–6.0
-                    .quizFailRate(round(0.30 + rng.nextDouble() * 0.40))           // 0.30–0.70
-                    .codingAcRate(round(0.70 + rng.nextDouble() * 0.30))           // 0.70–1.00
-                    .avgRuntimeMs(round(80 + rng.nextDouble() * 120))              // 80–200ms
-                    .attemptCount(2 + rng.nextInt(4))                              // 2–5 lần
-                    .build());
-        }
-
-        // Weak (~63 học sinh)
-        for (int i = 188; i <= 250; i++) {
-            list.add(StudentPerformanceFeatureDTO.builder()
-                    .userId("student-" + String.format("%03d", i))
-                    .courseId(resolvedCourse)
-                    .quizAvgScore(round(1.0 + rng.nextDouble() * 4.0))             // 1.0–5.0
-                    .quizFailRate(round(0.50 + rng.nextDouble() * 0.50))           // 0.50–1.00
-                    .codingAcRate(round(rng.nextDouble() * 0.30))                   // 0.00–0.30
-                    .avgRuntimeMs(round(800 + rng.nextDouble() * 1200))            // 800–2000ms
-                    .attemptCount(8 + rng.nextInt(12))                             // 8–19 lần
-                    .build());
-        }
-
-        return list;
-    }
 
     /**
      * Tạo 250 bản ghi risk features:

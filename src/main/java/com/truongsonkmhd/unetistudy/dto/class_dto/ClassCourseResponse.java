@@ -20,4 +20,9 @@ public class ClassCourseResponse {
     private String category;
     private Integer capacity;
     private Integer enrolledCount;
+    private String description;
+    private int lessonCount;
+    private int videoCount;
+    private int quizCount;
+    private int codingCount;
 }

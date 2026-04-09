@@ -1,6 +1,7 @@
 package com.truongsonkmhd.unetistudy.dto.contest_lesson;
 
 
+import com.truongsonkmhd.unetistudy.common.ContestType;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -17,6 +18,8 @@ public class ContestLessonRequestDTO {
     String title;
 
     String description;
+
+    ContestType contestType;
 
     Integer defaultDurationMinutes;
 

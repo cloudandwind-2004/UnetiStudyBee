@@ -1,5 +1,6 @@
 package com.truongsonkmhd.unetistudy.model.lesson.course_lesson;
 
+import com.truongsonkmhd.unetistudy.common.ContestType;
 import com.truongsonkmhd.unetistudy.common.StatusContest;
 import com.truongsonkmhd.unetistudy.model.quiz.Quiz;
 import jakarta.persistence.*;
@@ -20,6 +21,7 @@ import org.hibernate.annotations.UpdateTimestamp;
  * - Chứa CÂU HỎI, BÀI TẬP, CẤU HÌNH CHUNG
  * - KHÔNG chứa thời gian cụ thể cho từng lớp
  * - Giống như "đề thi gốc" có thể dùng lại nhiều lần
+ * - contestType: CODING (chỉ chứa bài lập trình) hoặc QUIZ (chỉ chứa trắc nghiệm)
  */
 @Getter
 @Setter
@@ -29,7 +31,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Entity
 @Table(name = "tbl_contest_lesson", indexes = {
         @Index(name = "idx_contest_active", columnList = "is_active"),
-        @Index(name = "idx_contest_status", columnList = "status")
+        @Index(name = "idx_contest_status", columnList = "status"),
+        @Index(name = "idx_contest_type", columnList = "contest_type")
 })
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ContestLesson {
@@ -44,6 +47,14 @@ public class ContestLesson {
 
     @Column(name = "description", columnDefinition = "text")
     String description;
+
+    /**
+     * Loại bài thi: CODING (lập trình) hoặc QUIZ (trắc nghiệm)
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "contest_type", nullable = false, length = 20)
+    @Builder.Default
+    ContestType contestType = ContestType.QUIZ;
 
     @OneToMany(mappedBy = "contestLesson", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default

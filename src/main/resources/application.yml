@@ -77,8 +77,9 @@ spring:
     caffeine:
       spec: maximumSize=200,expireAfterWrite=900s
 
-# Custom Cache Configuration
+# Custom App Configuration
 app:
+  mail-service-url: ${MAIL_SERVICE_URL:http://localhost:8081/api/email/send}
   cache:
     type: caffeine
     default-ttl: 900
@@ -175,6 +176,7 @@ logging:
 # ML Service (FastAPI - UnetistudyML)
 ml-service:
   url: ${ML_SERVICE_URL:http://localhost:8000}
+
 
 # Optimization for low memory
 springdoc:

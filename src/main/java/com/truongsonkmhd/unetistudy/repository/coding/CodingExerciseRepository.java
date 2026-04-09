@@ -56,4 +56,6 @@ public interface CodingExerciseRepository extends JpaRepository<CodingExercise, 
     List<UUID> getLessonIDByExerciseID(@Param("exerciseId") UUID exerciseId);
 
     Optional<CodingExercise> findByTemplateId(UUID templateId);
+
+    Optional<CodingExercise> findFirstByTemplateId(UUID templateId);
 }

@@ -7,12 +7,15 @@ import com.truongsonkmhd.unetistudy.context.UserContext;
 import com.truongsonkmhd.unetistudy.model.User;
 import com.truongsonkmhd.unetistudy.model.course.Course;
 import com.truongsonkmhd.unetistudy.model.lesson.course_lesson.Clazz;
+import com.truongsonkmhd.unetistudy.repository.UserRepository;
 import com.truongsonkmhd.unetistudy.repository.clazz.ClassRepository;
 import com.truongsonkmhd.unetistudy.repository.coding.CodingSubmissionRepository;
 import com.truongsonkmhd.unetistudy.repository.course.CourseEnrollmentRepository;
 import com.truongsonkmhd.unetistudy.repository.course.LessonProgressRepository;
 import com.truongsonkmhd.unetistudy.repository.quiz.UserQuizAttemptRepository;
 import com.truongsonkmhd.unetistudy.security.AuthoritiesConstants;
+import com.truongsonkmhd.unetistudy.service.infrastructure.BulkEmailService;
+import com.truongsonkmhd.unetistudy.service.infrastructure.EmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -47,7 +50,9 @@ public class ClassAnalyticsService {
     private final UserQuizAttemptRepository userQuizAttemptRepository;
     private final CodingSubmissionRepository codingSubmissionRepository;
     private final CourseEnrollmentRepository courseEnrollmentRepository;
+    private final UserRepository userRepository;
     private final MlServiceClient mlServiceClient;
+    private final BulkEmailService bulkEmailService;
 
     // ─────────────────────────────────────────────────────────────
     // PUBLIC API — 4 loại analytics theo classId
@@ -68,20 +73,6 @@ public class ClassAnalyticsService {
         }
     }
 
-    @Transactional(readOnly = true)
-    public ClusterResponseDTO clusterPerformance(UUID classId) {
-        ClassContext ctx = loadClassContext(classId);
-        List<StudentPerformanceFeatureDTO> features = buildPerformanceFeatures(ctx);
-        log.info("[ClassAnalytics] Performance clustering classId={}, students={}", classId, features.size());
-        try {
-            ClusterResponseDTO result = mlServiceClient.cluster(ClusterRequestDTO.builder()
-                    .clusterType("PERFORMANCE").students(features).build());
-            return enrichWithUserInfo(result, ctx.students);
-        } catch (Exception e) {
-            log.error("[ClassAnalytics] ML Service unavailable for PERFORMANCE: {}", e.getMessage());
-            return fallbackCluster("PERFORMANCE", ctx.students, "ML Service đang khởi động, vui lòng thử lại");
-        }
-    }
 
     @Transactional(readOnly = true)
     public ClusterResponseDTO clusterRisk(UUID classId) {
@@ -110,6 +101,25 @@ public class ClassAnalyticsService {
             log.error("[ClassAnalytics] ML Service unavailable for RISK predict: {}", e.getMessage());
             return fallbackRisk(ctx.students);
         }
+    }
+
+    @Transactional(readOnly = true)
+    public void sendRiskEmail(UUID classId, RiskEmailRequestDTO request) {
+        log.info("[ClassAnalytics] Sending risk email for classId={}, level={}, count={}", 
+                classId, request.getRiskLevel(), request.getStudentIds().size());
+        
+        // Load User info (email)
+        List<User> students = userRepository.findAllById(request.getStudentIds());
+        List<String> emails = students.stream()
+                .map(User::getEmail)
+                .filter(Objects::nonNull)
+                .toList();
+
+        if (emails.isEmpty()) {
+            throw new BusinessRuleException("Không tìm thấy email của danh sách học sinh được chọn");
+        }
+
+        bulkEmailService.sendBulkEmail(emails, request.getSubject(), request.getEmailBody());
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -329,6 +339,19 @@ public class ClassAnalyticsService {
             long timeSpent = (long) (m.completionRate * 3600); // proxy: ~1 giờ/10% hoàn thành
             int activeDays = (int) Math.max(0, 7 - m.gapDays);
 
+            // ── Tính Efficiency Index ─────────────────────────────────────
+            // progressEfficiency = thực tế / kỳ vọng (theo % thời gian đã trôi qua)
+            // Ví dụ: lớp đi 50% thời gian, bạn hoàn thành 70% → efficiency = 1.4
+            //        lớp đi 50% thời gian, bạn hoàn thành 20% → efficiency = 0.4
+            // Cap về [0.0, 2.0] để tránh extreme outlier làm lệch centroid K-Means
+            double efficiency;
+            if (ctx.expectedProgressRate <= 0.0) {
+                efficiency = 1.0; // lớp mới bắt đầu, chưa có kỳ vọng → neutral
+            } else {
+                efficiency = m.completionRate / ctx.expectedProgressRate;
+                efficiency = Math.min(2.0, Math.max(0.0, Math.round(efficiency * 100.0) / 100.0));
+            }
+
             return StudentBehavioralFeatureDTO.builder()
                     .userId(uid.toString())
                     .courseId(m.representCourseId.toString())
@@ -338,30 +361,11 @@ public class ClassAnalyticsService {
                     .activeDays7(Math.min(7, activeDays))
                     .lastAccessGapDays(m.gapDays)
                     .quizFailRate(quizFailRate)
+                    .progressEfficiency(efficiency)
                     .build();
         }).toList();
     }
 
-    private List<StudentPerformanceFeatureDTO> buildPerformanceFeatures(ClassContext ctx) {
-        return ctx.students.stream().map(student -> {
-            UUID uid = student.getId();
-            StudentMetrics m = ctx.metricsMap.getOrDefault(uid, StudentMetrics.empty(ctx.classDurationDays));
-
-            double quizFailRate = m.quizAttempts > 0
-                    ? round(1.0 - m.quizAvgScore / 10.0)
-                    : 0.0;
-
-            return StudentPerformanceFeatureDTO.builder()
-                    .userId(uid.toString())
-                    .courseId(m.representCourseId.toString())
-                    .quizAvgScore(m.quizAvgScore)
-                    .quizFailRate(quizFailRate)
-                    .codingAcRate(m.codePassAvg)
-                    .avgRuntimeMs(0.0)
-                    .attemptCount(m.quizAttempts + m.codeAttempts)
-                    .build();
-        }).toList();
-    }
 
     private List<StudentRiskFeatureDTO> buildRiskFeatures(ClassContext ctx) {
         return ctx.students.stream().map(student -> {

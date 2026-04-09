@@ -1,5 +1,6 @@
 package com.truongsonkmhd.unetistudy.dto.contest_lesson;
 
+import com.truongsonkmhd.unetistudy.common.ContestType;
 import com.truongsonkmhd.unetistudy.common.StatusContest;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -15,6 +16,7 @@ public class ContestLessonSummaryDTO {
     UUID contestLessonId;
     String title;
     String description;
+    ContestType contestType;
     Integer totalPoints;
     Integer defaultDurationMinutes;
     Integer defaultMaxAttempts;
@@ -29,6 +31,7 @@ public class ContestLessonSummaryDTO {
 
 
     public ContestLessonSummaryDTO(UUID contestLessonId, String title, String description,
+            ContestType contestType,
             Integer totalPoints, Integer defaultDurationMinutes,
             Integer defaultMaxAttempts, Integer passingScore,
             StatusContest status, Boolean isActive,
@@ -38,6 +41,7 @@ public class ContestLessonSummaryDTO {
         this.contestLessonId = contestLessonId;
         this.title = title;
         this.description = description;
+        this.contestType = contestType;
         this.totalPoints = totalPoints;
         this.defaultDurationMinutes = defaultDurationMinutes;
         this.defaultMaxAttempts = defaultMaxAttempts;
@@ -52,6 +56,7 @@ public class ContestLessonSummaryDTO {
     }
 
     public ContestLessonSummaryDTO(UUID contestLessonId, String title, String description,
+            ContestType contestType,
             Integer totalPoints, Integer defaultDurationMinutes,
             Integer defaultMaxAttempts, Integer passingScore,
             StatusContest status, Boolean isActive,
@@ -61,6 +66,7 @@ public class ContestLessonSummaryDTO {
         this.contestLessonId = contestLessonId;
         this.title = title;
         this.description = description;
+        this.contestType = contestType;
         this.totalPoints = totalPoints;
         this.defaultDurationMinutes = defaultDurationMinutes;
         this.defaultMaxAttempts = defaultMaxAttempts;

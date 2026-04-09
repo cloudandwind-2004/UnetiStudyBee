@@ -5,9 +5,11 @@ import com.truongsonkmhd.unetistudy.common.ClassContestStatus;
 import com.truongsonkmhd.unetistudy.dto.contest_lesson.*;
 import com.truongsonkmhd.unetistudy.exception.custom_exception.ResourceNotFoundException;
 import com.truongsonkmhd.unetistudy.model.lesson.course_lesson.ClassContest;
+import com.truongsonkmhd.unetistudy.model.lesson.course_lesson.ClassContestSubmission;
 import com.truongsonkmhd.unetistudy.model.lesson.course_lesson.Clazz;
 import com.truongsonkmhd.unetistudy.model.lesson.course_lesson.ContestLesson;
 import com.truongsonkmhd.unetistudy.repository.clazz.ClassContestRepository;
+import com.truongsonkmhd.unetistudy.repository.clazz.ClassContestSubmissionRepository;
 import com.truongsonkmhd.unetistudy.repository.clazz.ClassRepository;
 import com.truongsonkmhd.unetistudy.repository.course.ContestLessonRepository;
 import com.truongsonkmhd.unetistudy.service.ClassContestService;
@@ -29,6 +31,7 @@ import java.util.stream.Collectors;
 public class ClassContestServiceImpl implements ClassContestService {
 
         private final ClassContestRepository classContestRepository;
+        private final ClassContestSubmissionRepository submissionRepository;
         private final ClassRepository classRepository;
         private final ContestLessonRepository contestLessonRepository;
 
@@ -275,6 +278,7 @@ public class ClassContestServiceImpl implements ClassContestService {
                                                 .contestLessonId(contestLesson.getContestLessonId())
                                                 .title(contestLesson.getTitle())
                                                 .description(contestLesson.getDescription())
+                                                .contestType(contestLesson.getContestType())
                                                 .defaultTotalPoints(contestLesson.getTotalPoints())
                                                 .codingExerciseCount(contestLesson.getCodingExercises().size())
                                                 .quizQuestionCount(contestLesson.getQuizzes().size())
@@ -295,5 +299,88 @@ public class ClassContestServiceImpl implements ClassContestService {
                                 .createdAt(classContest.getCreatedAt())
                                 .updatedAt(classContest.getUpdatedAt())
                                 .build();
+        }
+
+        /**
+         * Lấy bảng điểm (gradebook) cho một class contest cụ thể
+         */
+        public GradebookResponse getGradebook(UUID classContestId) {
+                ClassContest classContest = classContestRepository.findById(classContestId)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Class contest not found with id: " + classContestId));
+
+                Clazz clazz = classContest.getClazz();
+                ContestLesson contestLesson = classContest.getContestLesson();
+
+                // Lấy bài nộp tốt nhất của mỗi user
+                List<ClassContestSubmission> bestSubmissions = submissionRepository
+                                .findBestSubmissionsByClassContest(classContest);
+
+                // Map sang DTO
+                List<GradebookEntryDTO> entries = bestSubmissions.stream()
+                                .map(sub -> GradebookEntryDTO.builder()
+                                                .submissionId(sub.getSubmissionId())
+                                                .userId(sub.getUser().getId())
+                                                .username(sub.getUser().getUsername())
+                                                .fullName(sub.getUser().getFullName())
+                                                .avatar(sub.getUser().getAvatar())
+                                                .totalScore(sub.getTotalScore())
+                                                .isPassed(sub.getIsPassed())
+                                                .status(sub.getStatus())
+                                                .startedAt(sub.getStartedAt())
+                                                .submittedAt(sub.getSubmittedAt())
+                                                .build())
+                                .collect(Collectors.toList());
+
+                // Thống kê
+                int totalStudents = clazz.getStudents().size();
+                int submittedCount = entries.size();
+                int passedCount = (int) entries.stream().filter(e -> Boolean.TRUE.equals(e.getIsPassed())).count();
+                double averageScore = entries.stream()
+                                .mapToDouble(e -> e.getTotalScore() != null ? e.getTotalScore() : 0.0)
+                                .average().orElse(0.0);
+
+                return GradebookResponse.builder()
+                                .classContestId(classContestId)
+                                .contestTitle(contestLesson.getTitle())
+                                .contestDescription(contestLesson.getDescription())
+                                .contestType(contestLesson.getContestType())
+                                .totalMaxPoints(contestLesson.getTotalPoints())
+                                .passingScore(classContest.getEffectivePassingScore())
+                                .classId(clazz.getClassId())
+                                .classCode(clazz.getClassCode())
+                                .className(clazz.getClassName())
+                                .scheduledStartTime(classContest.getScheduledStartTime())
+                                .scheduledEndTime(classContest.getScheduledEndTime())
+                                .totalStudents(totalStudents)
+                                .submittedCount(submittedCount)
+                                .passedCount(passedCount)
+                                .averageScore(Math.round(averageScore * 100.0) / 100.0)
+                                .entries(entries)
+                                .build();
+        }
+
+        /**
+         * Lấy bảng điểm theo classId và contestLessonId (lọc theo tên bài thi + lớp)
+         */
+        public GradebookResponse getGradebookByClassAndContest(UUID classId, UUID contestLessonId) {
+                Clazz clazz = classRepository.findById(classId)
+                                .orElseThrow(() -> new ResourceNotFoundException("Class not found"));
+                ContestLesson contestLesson = contestLessonRepository.findById(contestLessonId)
+                                .orElseThrow(() -> new ResourceNotFoundException("Contest lesson not found"));
+
+                // Tìm classContest tương ứng
+                List<ClassContest> classContests = classContestRepository.findByClazz(clazz).stream()
+                                .filter(cc -> cc.getContestLesson().getContestLessonId().equals(contestLessonId))
+                                .collect(Collectors.toList());
+
+                if (classContests.isEmpty()) {
+                        throw new ResourceNotFoundException(
+                                        "Không tìm thấy bài thi '" + contestLesson.getTitle() + "' trong lớp '"
+                                                        + clazz.getClassName() + "'");
+                }
+
+                // Lấy classContest đầu tiên (thường chỉ có 1 do unique constraint)
+                return getGradebook(classContests.get(0).getClassContestId());
         }
 }

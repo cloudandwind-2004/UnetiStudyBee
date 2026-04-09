@@ -23,4 +23,6 @@ public interface QuizQuestionRepository extends JpaRepository<Quiz, UUID> {
     List<Quiz> findByContestLessonAndIsPublishedTrue(@Param("contestLesson") ContestLesson contestLesson);
 
     Optional<Quiz> findByTemplateId(UUID templateId);
+
+    Optional<Quiz> findFirstByTemplateId(UUID templateId);
 }

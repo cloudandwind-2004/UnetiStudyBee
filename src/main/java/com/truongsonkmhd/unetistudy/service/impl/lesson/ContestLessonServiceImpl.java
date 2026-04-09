@@ -1,5 +1,6 @@
 package com.truongsonkmhd.unetistudy.service.impl.lesson;
 
+import com.truongsonkmhd.unetistudy.common.ContestType;
 import com.truongsonkmhd.unetistudy.common.StatusContest;
 import com.truongsonkmhd.unetistudy.dto.a_common.PageResponse;
 import com.truongsonkmhd.unetistudy.dto.contest_lesson.ContestLessonRequestDTO;
@@ -47,9 +48,18 @@ public class ContestLessonServiceImpl implements ContestLessonService {
     @Override
     @Transactional
     public ContestLessonResponseDTO addContestLesson(ContestLessonRequestDTO request) {
+        ContestType contestType = request.getContestType();
+        if (contestType == null) {
+            contestType = ContestType.QUIZ; // default
+        }
+
+        // Validate: CODING contest không được có quiz, QUIZ contest không được có coding
+        validateContestTypeConstraints(contestType, request);
+
         ContestLesson contestLesson = ContestLesson.builder()
                 .title(request.getTitle())
                 .description(request.getDescription())
+                .contestType(contestType)
                 .defaultDurationMinutes(request.getDefaultDurationMinutes())
                 .totalPoints(request.getTotalPoints())
                 .defaultMaxAttempts(request.getDefaultMaxAttempts())
@@ -59,8 +69,11 @@ public class ContestLessonServiceImpl implements ContestLessonService {
                 .status(StatusContest.DRAFT)
                 .build();
 
-        addCodingExercisesToContest(request.getExerciseTemplateIds(), contestLesson);
-        addQuizToContest(request.getQuizTemplateIds(), contestLesson);
+        if (contestType == ContestType.CODING) {
+            addCodingExercisesToContest(request.getExerciseTemplateIds(), contestLesson);
+        } else {
+            addQuizToContest(request.getQuizTemplateIds(), contestLesson);
+        }
 
         contestLessonRepository.save(contestLesson);
 
@@ -80,6 +93,7 @@ public class ContestLessonServiceImpl implements ContestLessonService {
                 .contestLessonId(contestLesson.getContestLessonId())
                 .title(contestLesson.getTitle())
                 .description(contestLesson.getDescription())
+                .contestType(contestLesson.getContestType())
                 .defaultDurationMinutes(contestLesson.getDefaultDurationMinutes())
                 .totalPoints(contestLesson.getTotalPoints())
                 .defaultMaxAttempts(contestLesson.getDefaultMaxAttempts())
@@ -104,14 +118,15 @@ public class ContestLessonServiceImpl implements ContestLessonService {
             int page,
             int size,
             String q,
-            StatusContest statusContest) {
+            StatusContest statusContest,
+            ContestType contestType) {
 
         int safePage = Math.max(page, 0);
         int safeSize = Math.min(Math.max(size, 1), 50);
 
         Pageable pageable = PageRequest.of(safePage, safeSize);
         Page<ContestLesson> result = contestLessonRepository.searchContestAdvance(q, statusContest,
-                pageable);
+                contestType, pageable);
 
         Page<ContestLessonResponseDTO> responsePage = result.map(this::mapToResponseDTO);
 
@@ -123,13 +138,14 @@ public class ContestLessonServiceImpl implements ContestLessonService {
     public PageResponse<ContestLessonSummaryDTO> getPageReadyContestLessons(
             int page,
             int size,
-            String q) {
+            String q,
+            ContestType contestType) {
         int safePage = Math.max(page, 0);
         int safeSize = Math.min(Math.max(size, 1), 50);
 
         Pageable pageable = PageRequest.of(safePage, safeSize);
         Page<ContestLessonSummaryDTO> result = contestLessonRepository.findSummaryByStatus(q, StatusContest.READY,
-                pageable);
+                contestType, pageable);
 
         return buildPageResponse(result);
     }
@@ -153,7 +169,7 @@ public class ContestLessonServiceImpl implements ContestLessonService {
                     .findAllById(exerciseTemplateIds);
 
             for (CodingExerciseTemplate template : templates) {
-                CodingExercise exercise = codingExerciseRepository.findByTemplateId(template.getTemplateId())
+                CodingExercise exercise = codingExerciseRepository.findFirstByTemplateId(template.getTemplateId())
                         .orElseGet(() -> {
                             CodingExercise newEx = template.toContestExercise();
                             newEx.setTemplateId(template.getTemplateId());
@@ -176,7 +192,7 @@ public class ContestLessonServiceImpl implements ContestLessonService {
         List<QuizTemplate> templates = quizTemplateRepository.findAllById(quizTemplateIds);
 
         templates.forEach(template -> {
-            Quiz quiz = quizQuestionRepository.findByTemplateId(template.getId())
+            Quiz quiz = quizQuestionRepository.findFirstByTemplateId(template.getId())
                     .orElseGet(() -> {
                         Quiz newQuiz = template.toQuiz();
                         newQuiz.setTemplateId(template.getId());
@@ -193,8 +209,16 @@ public class ContestLessonServiceImpl implements ContestLessonService {
         ContestLesson contestLesson = contestLessonRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Contest lesson not found with id: " + id));
 
+        ContestType contestType = request.getContestType() != null
+                ? request.getContestType()
+                : contestLesson.getContestType();
+
+        // Validate type constraints
+        validateContestTypeConstraints(contestType, request);
+
         contestLesson.setTitle(request.getTitle());
         contestLesson.setDescription(request.getDescription());
+        contestLesson.setContestType(contestType);
         contestLesson.setDefaultDurationMinutes(request.getDefaultDurationMinutes());
         contestLesson.setTotalPoints(request.getTotalPoints());
         contestLesson.setDefaultMaxAttempts(request.getDefaultMaxAttempts());
@@ -202,12 +226,15 @@ public class ContestLessonServiceImpl implements ContestLessonService {
         contestLesson.setShowLeaderboardDefault(request.getShowLeaderboardDefault());
         contestLesson.setInstructions(request.getInstructions());
 
-        // Update relations
+        // Update relations based on type
         contestLesson.getCodingExercises().clear();
-        addCodingExercisesToContest(request.getExerciseTemplateIds(), contestLesson);
-
         contestLesson.getQuizzes().clear();
-        addQuizToContest(request.getQuizTemplateIds(), contestLesson);
+
+        if (contestType == ContestType.CODING) {
+            addCodingExercisesToContest(request.getExerciseTemplateIds(), contestLesson);
+        } else {
+            addQuizToContest(request.getQuizTemplateIds(), contestLesson);
+        }
 
         contestLessonRepository.save(contestLesson);
         return mapToResponseDTO(contestLesson);
@@ -249,6 +276,23 @@ public class ContestLessonServiceImpl implements ContestLessonService {
                 .orElseThrow(() -> new RuntimeException("Contest lesson not found with id: " + id));
         contestLesson.setStatus(status);
         contestLessonRepository.save(contestLesson);
+    }
+
+    /**
+     * Validate: CODING contest chỉ chứa coding exercises, QUIZ contest chỉ chứa quizzes
+     */
+    private void validateContestTypeConstraints(ContestType contestType, ContestLessonRequestDTO request) {
+        if (contestType == ContestType.CODING) {
+            if (request.getQuizTemplateIds() != null && !request.getQuizTemplateIds().isEmpty()) {
+                throw new IllegalArgumentException(
+                        "Bài thi lập trình (CODING) không được chứa câu hỏi trắc nghiệm.");
+            }
+        } else if (contestType == ContestType.QUIZ) {
+            if (request.getExerciseTemplateIds() != null && !request.getExerciseTemplateIds().isEmpty()) {
+                throw new IllegalArgumentException(
+                        "Bài thi trắc nghiệm (QUIZ) không được chứa bài tập lập trình.");
+            }
+        }
     }
 
 }

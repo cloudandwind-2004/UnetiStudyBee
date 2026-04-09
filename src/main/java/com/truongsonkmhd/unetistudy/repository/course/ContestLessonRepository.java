@@ -1,5 +1,6 @@
 package com.truongsonkmhd.unetistudy.repository.course;
 
+import com.truongsonkmhd.unetistudy.common.ContestType;
 import com.truongsonkmhd.unetistudy.common.StatusContest;
 import com.truongsonkmhd.unetistudy.dto.contest_lesson.ContestLessonResponseDTO;
 import com.truongsonkmhd.unetistudy.dto.contest_lesson.ContestLessonSummaryDTO;
@@ -23,11 +24,14 @@ public interface ContestLessonRepository extends JpaRepository<ContestLesson, UU
                             (:q is null or :q = '' or lower(ct.title) like lower(concat('%', :q, '%')))
                         and
                             (:statusContest is null or ct.status = :statusContest)
+                        and
+                            (:contestType is null or ct.contestType = :contestType)
                         order by ct.createdAt desc
                         """)
     Page<ContestLesson> searchContestAdvance(
             @Param("q") String q,
             @Param("statusContest") StatusContest statusContest,
+            @Param("contestType") ContestType contestType,
             Pageable pageable);
 
     @Query("""
@@ -35,6 +39,7 @@ public interface ContestLessonRepository extends JpaRepository<ContestLesson, UU
                 ct.contestLessonId,
                 ct.title,
                 ct.description,
+                ct.contestType,
                 ct.totalPoints,
                 ct.defaultDurationMinutes,
                 ct.defaultMaxAttempts,
@@ -52,11 +57,14 @@ public interface ContestLessonRepository extends JpaRepository<ContestLesson, UU
                 (:q is null or :q = '' or lower(ct.title) like lower(concat('%', :q, '%')))
             and
                 (ct.status = :status)
+            and
+                (:contestType is null or ct.contestType = :contestType)
             order by ct.createdAt desc
             """)
     Page<ContestLessonSummaryDTO> findSummaryByStatus(
             @Param("q") String q,
             @Param("status") StatusContest status,
+            @Param("contestType") ContestType contestType,
             Pageable pageable);
 
 }

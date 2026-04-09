@@ -24,15 +24,6 @@ public class StudentAnalyticsController {
         return ResponseEntity.ok(analyticsService.clusterBehavioral(courseId));
     }
 
-    /**
-     * Phân nhóm năng lực (quiz + coding)
-     * GET /api/v1/analytics/cluster/performance?courseId=xxx
-     */
-    @GetMapping("/cluster/performance")
-    public ResponseEntity<ClusterResponseDTO> clusterPerformance(
-            @RequestParam(defaultValue = "") String courseId) {
-        return ResponseEntity.ok(analyticsService.clusterPerformance(courseId));
-    }
 
     /**
      * Phân nhóm nguy cơ bỏ học (KMeans 3 nhóm)
