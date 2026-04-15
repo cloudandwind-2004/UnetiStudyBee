@@ -1,4 +1,4 @@
-# UnetiStudy - Đồ án tốt nghiệp kết thúc quãng thời gian học tại Uneti
+# UnetiStudy 
 
 ## 1. Introduction
 ....
